@@ -1,1004 +1,42 @@
 openapi: 3.0.3
 info:
-  title: Snapchat Marketing API
+  title: Snapchat Public Profile API
   description: |
-    The Snapchat Marketing API provides programmatic control over the full advertising lifecycle,
-    enabling you to reach 400M+ daily active users with native advertising experiences.
+    The Snapchat Public Profile API provides access to public metadata and statistics about Public Profiles and their content. The API enables two primary functions: Creator Discovery and Content Management.
     
-    **Key Capabilities:**
-    - **Campaign Management**: Create and manage campaigns, ad squads, and ads at scale
-    - **Creative Automation**: Upload media, build creatives, and deploy Dynamic Product Ads
-    - **AR Advertising**: Deploy sponsored Lenses and Filters for camera interaction
-    - **Audience Targeting**: Reach users by demographics, location, interests, and custom audiences
-    - **Measurement & Reporting**: Real-time performance stats with flexible granularity
-    - **Lead Generation**: Collect leads directly within Snapchat using customizable forms
-    - **Media Management**: Comprehensive media upload and management
-    - **Organizations**: Multi-account and agency management
+    **Key Features:**
+    - **Creator Discovery**: Find the right creators for brand partnerships with public metrics and audience insights
+    - **Content Management**: Post content on behalf of brands or creators, view analytics, and promote with paid media
+    - **Public Profiles**: Access brand and creator content within Snapchat, supporting both verified and unverified profiles
+    - **Content Types**: Stories, Saved Stories, Spotlights, and Lenses
     
-    **Base URL:** https://adsapi.snapchat.com/v1
-    **Authentication:** OAuth 2.0
-    **API Hierarchy:** Organization → Ad Account → Campaign → Ad Squad → Ad → Creative
-  version: "1.0"
+    **Profile Categories & Tiers:**
+    - PUBLIC Person: Emerging creators eligible for monetization
+    - PUBLIC OFFICIAL Person: Verified Snap Stars
+    - PUBLIC Business: Business profiles with advanced features  
+    - PUBLIC OFFICIAL Business: Official verified businesses
+    
+    **Endpoint Types:**
+    - **Public Endpoints** (`/public/v1/`): No profile owner authorization required, basic metadata only
+    - **Authorized Endpoints** (`/v1/`): Require profile owner authorization or data sharing opt-in
+    
+    **Base URL:** https://businessapi.snapchat.com
+    **Authentication:** OAuth 2.0 with Bearer tokens
+    **Scope:** snapchat-profile-api
+  version: '1.0'
   contact:
-    name: Snap for Developers
-    url: https://developers.snap.com/api/marketing-api/
+    name: Snapchat for Developers
+    url: https://developers.snap.com/api/marketing-api/Public-Profile-API/Introduction
   license:
-    name: Snapchat API Terms
-    url: https://www.snap.com/en-US/terms/
+    name: Snapchat Terms of Service
+    url: https://snap.com/en-US/terms/
+
 servers:
-  - url: https://adsapi.snapchat.com/v1
-    description: Snapchat Ads API
+  - url: https://businessapi.snapchat.com
+    description: Production server
 
-paths:
-  # Organizations
-  /organizations:
-    get:
-      tags: [Organizations]
-      summary: Get organizations
-      description: Get all organizations accessible by the authenticated user
-      responses:
-        '200':
-          description: Organizations retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrganizationListResponse'
-        '401':
-          description: Unauthorized
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  /organizations/{organization_id}:
-    get:
-      tags: [Organizations]
-      summary: Get organization
-      description: Get a specific organization by ID
-      parameters:
-        - name: organization_id
-          in: path
-          required: true
-          description: Organization ID
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Organization retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrganizationResponse'
-        '404':
-          description: Organization not found
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  # Ad Accounts
-  /adaccounts:
-    get:
-      tags: [Ad Accounts]
-      summary: Get ad accounts
-      description: Get all ad accounts accessible by the authenticated user
-      parameters:
-        - name: organization_id
-          in: query
-          description: Filter by organization ID
-          schema:
-            type: string
-        - name: with_ad_account_name
-          in: query
-          description: Include ad account name
-          schema:
-            type: boolean
-            default: false
-      responses:
-        '200':
-          description: Ad accounts retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdAccountListResponse'
-        '401':
-          description: Unauthorized
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  /adaccounts/{ad_account_id}:
-    get:
-      tags: [Ad Accounts]
-      summary: Get ad account
-      description: Get a specific ad account by ID
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Ad account retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdAccountResponse'
-        '404':
-          description: Ad account not found
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-    put:
-      tags: [Ad Accounts]
-      summary: Update ad account
-      description: Update an ad account
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AdAccount'
-      responses:
-        '200':
-          description: Ad account updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdAccountResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  # Campaigns
-  /adaccounts/{ad_account_id}/campaigns:
-    get:
-      tags: [Campaigns]
-      summary: Get campaigns
-      description: Get all campaigns for an ad account
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: Number of results to return
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 1000
-            default: 50
-      responses:
-        '200':
-          description: Campaigns retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CampaignListResponse'
-        '401':
-          description: Unauthorized
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-    post:
-      tags: [Campaigns]
-      summary: Create campaign
-      description: Create a new campaign
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Campaign'
-            example:
-              name: "Holiday Sales Campaign"
-              objective_v2_properties:
-                objective_type: "WEBSITE_CONVERSIONS"
-                conversion_optimization_event: "PURCHASE"
-              status: "ACTIVE"
-              start_time: "2026-02-15T00:00:00.000Z"
-              end_time: "2026-02-28T23:59:59.000Z"
-      responses:
-        '200':
-          description: Campaign created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CampaignResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  /adaccounts/{ad_account_id}/campaigns/{campaign_id}:
-    get:
-      tags: [Campaigns]
-      summary: Get campaign
-      description: Get a specific campaign
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: campaign_id
-          in: path
-          required: true
-          description: Campaign ID
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Campaign retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CampaignResponse'
-        '404':
-          description: Campaign not found
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-    put:
-      tags: [Campaigns]
-      summary: Update campaign
-      description: Update an existing campaign
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: campaign_id
-          in: path
-          required: true
-          description: Campaign ID
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Campaign'
-      responses:
-        '200':
-          description: Campaign updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CampaignResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-    delete:
-      tags: [Campaigns]
-      summary: Delete campaign
-      description: Delete a campaign
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: campaign_id
-          in: path
-          required: true
-          description: Campaign ID
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Campaign deleted successfully
-        '404':
-          description: Campaign not found
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  # Ad Squads
-  /adaccounts/{ad_account_id}/adsquads:
-    get:
-      tags: [Ad Squads]
-      summary: Get ad squads
-      description: Get all ad squads for an ad account
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: campaign_id
-          in: query
-          description: Filter by campaign ID
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: Number of results to return
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 1000
-            default: 50
-      responses:
-        '200':
-          description: Ad squads retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdSquadListResponse'
-        '401':
-          description: Unauthorized
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-    post:
-      tags: [Ad Squads]
-      summary: Create ad squad
-      description: Create a new ad squad
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AdSquad'
-            example:
-              name: "Holiday Targeting Squad"
-              campaign_id: "campaign123"
-              status: "ACTIVE"
-              type: "SNAP_ADS"
-              placement_v2:
-                config: "AUTOMATIC_PLACEMENT"
-              billing_event: "IMPRESSION"
-              bid_micro: 5000000
-              daily_budget_micro: 10000000000
-              start_time: "2026-02-15T00:00:00.000Z"
-              targeting:
-                demographics:
-                  - min_age: 21
-                    max_age: 34
-                geos:
-                  - country_code: "us"
-      responses:
-        '200':
-          description: Ad squad created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdSquadResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  # Ads
-  /adaccounts/{ad_account_id}/ads:
-    get:
-      tags: [Ads]
-      summary: Get ads
-      description: Get all ads for an ad account
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: ad_squad_id
-          in: query
-          description: Filter by ad squad ID
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: Number of results to return
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 1000
-            default: 50
-      responses:
-        '200':
-          description: Ads retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdListResponse'
-        '401':
-          description: Unauthorized
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-    post:
-      tags: [Ads]
-      summary: Create ad
-      description: Create a new ad
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Ad'
-            example:
-              name: "Holiday Sale Ad"
-              ad_squad_id: "adsquad123"
-              creative_id: "creative456"
-              status: "ACTIVE"
-      responses:
-        '200':
-          description: Ad created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  # Creatives
-  /adaccounts/{ad_account_id}/creatives:
-    get:
-      tags: [Creatives]
-      summary: Get creatives
-      description: Get all creatives for an ad account
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: Number of results to return
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 1000
-            default: 50
-      responses:
-        '200':
-          description: Creatives retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreativeListResponse'
-        '401':
-          description: Unauthorized
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-    post:
-      tags: [Creatives]
-      summary: Create creative
-      description: Create a new creative
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Creative'
-            example:
-              name: "Holiday Video Creative"
-              type: "SNAP_AD"
-              packaging_status: "PENDING"
-              top_snap_media_id: "media123"
-              headline: "Shop Holiday Deals Now!"
-              call_to_action: "SHOP_NOW"
-              profile_properties:
-                profile_id: "profile456"
-              brand_name: "My Store"
-      responses:
-        '200':
-          description: Creative created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreativeResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  # Media
-  /adaccounts/{ad_account_id}/media:
-    get:
-      tags: [Media]
-      summary: Get media
-      description: Get all media for an ad account
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: Number of results to return
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 1000
-            default: 50
-      responses:
-        '200':
-          description: Media retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MediaListResponse'
-        '401':
-          description: Unauthorized
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-    post:
-      tags: [Media]
-      summary: Upload media
-      description: Upload a new media file
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: Media file to upload
-                name:
-                  type: string
-                  description: Media name
-                type:
-                  type: string
-                  enum: [IMAGE, VIDEO]
-                  description: Media type
-              required: [file]
-      responses:
-        '200':
-          description: Media uploaded successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MediaResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  # Audience Segments (Custom Audiences)
-  /adaccounts/{ad_account_id}/segments:
-    get:
-      tags: [Audience Segments]
-      summary: Get audience segments
-      description: Get all audience segments for an ad account
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: Number of results to return
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 1000
-            default: 50
-      responses:
-        '200':
-          description: Audience segments retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AudienceSegmentListResponse'
-        '401':
-          description: Unauthorized
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-    post:
-      tags: [Audience Segments]
-      summary: Create audience segment
-      description: Create a new audience segment
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AudienceSegment'
-            example:
-              name: "Website Visitors"
-              description: "Users who visited our website in the last 30 days"
-              source_type: "FIRST_PARTY"
-              retention_in_days: 30
-      responses:
-        '200':
-          description: Audience segment created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AudienceSegmentResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  # Audience Segment Users
-  /adaccounts/{ad_account_id}/segments/{segment_id}/users:
-    post:
-      tags: [Audience Segments]
-      summary: Upload users to segment
-      description: Upload user data to an audience segment
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: segment_id
-          in: path
-          required: true
-          description: Audience segment ID
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                users:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/SegmentUser'
-                  description: List of users to add to the segment
-                  maxItems: 10000
-              required: [users]
-            example:
-              users:
-                - hashed_email: "a03dab42b9e5e8c8c1b8f5f4d4e2e1a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
-                  hashed_phone: "b1e3f5g7h9i1j3k5l7m9n1o3p5q7r9s1t3u5v7w9x1y3z5"
-                - hashed_email: "c04ebc53a9f6f9d9d2c9g6g5e5f3f2b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7"
-      responses:
-        '200':
-          description: Users uploaded successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SegmentUsersResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  # Analytics and Stats
-  /adaccounts/{ad_account_id}/campaigns/{campaign_id}/stats:
-    get:
-      tags: [Analytics]
-      summary: Get campaign stats
-      description: Get performance statistics for a campaign
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: campaign_id
-          in: path
-          required: true
-          description: Campaign ID
-          schema:
-            type: string
-        - name: granularity
-          in: query
-          description: Time granularity for stats
-          schema:
-            type: string
-            enum: [TOTAL, DAY, HOUR]
-            default: TOTAL
-        - name: fields
-          in: query
-          description: Comma-separated list of stat fields
-          schema:
-            type: string
-            default: "impressions,swipes,spend,conversion_purchases,conversion_purchases_value"
-        - name: start_time
-          in: query
-          description: Start time for stats (ISO 8601)
-          schema:
-            type: string
-            format: date-time
-        - name: end_time
-          in: query
-          description: End time for stats (ISO 8601)
-          schema:
-            type: string
-            format: date-time
-        - name: breakdown
-          in: query
-          description: Breakdown dimensions
-          schema:
-            type: array
-            items:
-              type: string
-              enum: [age, gender, country, placement, conversion_source]
-      responses:
-        '200':
-          description: Campaign stats retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StatsResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  /adaccounts/{ad_account_id}/adsquads/{ad_squad_id}/stats:
-    get:
-      tags: [Analytics]
-      summary: Get ad squad stats
-      description: Get performance statistics for an ad squad
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: ad_squad_id
-          in: path
-          required: true
-          description: Ad squad ID
-          schema:
-            type: string
-        - name: granularity
-          in: query
-          description: Time granularity for stats
-          schema:
-            type: string
-            enum: [TOTAL, DAY, HOUR]
-            default: TOTAL
-        - name: fields
-          in: query
-          description: Comma-separated list of stat fields
-          schema:
-            type: string
-            default: "impressions,swipes,spend,video_views,conversion_purchases"
-        - name: start_time
-          in: query
-          description: Start time for stats (ISO 8601)
-          schema:
-            type: string
-            format: date-time
-        - name: end_time
-          in: query
-          description: End time for stats (ISO 8601)
-          schema:
-            type: string
-            format: date-time
-        - name: breakdown
-          in: query
-          description: Breakdown dimensions
-          schema:
-            type: array
-            items:
-              type: string
-              enum: [age, gender, country, placement, conversion_source]
-      responses:
-        '200':
-          description: Ad squad stats retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StatsResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  /adaccounts/{ad_account_id}/ads/{ad_id}/stats:
-    get:
-      tags: [Analytics]
-      summary: Get ad stats
-      description: Get performance statistics for an ad
-      parameters:
-        - name: ad_account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-        - name: ad_id
-          in: path
-          required: true
-          description: Ad ID
-          schema:
-            type: string
-        - name: granularity
-          in: query
-          description: Time granularity for stats
-          schema:
-            type: string
-            enum: [TOTAL, DAY, HOUR]
-            default: TOTAL
-        - name: fields
-          in: query
-          description: Comma-separated list of stat fields
-          schema:
-            type: string
-            default: "impressions,swipes,spend,quartile_1,quartile_2,quartile_3,view_completion"
-        - name: start_time
-          in: query
-          description: Start time for stats (ISO 8601)
-          schema:
-            type: string
-            format: date-time
-        - name: end_time
-          in: query
-          description: End time for stats (ISO 8601)
-          schema:
-            type: string
-            format: date-time
-      responses:
-        '200':
-          description: Ad stats retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StatsResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  # Targeting Options
-  /targeting/demographics:
-    get:
-      tags: [Targeting]
-      summary: Get demographic targeting options
-      description: Get available demographic targeting options
-      parameters:
-        - name: country_codes
-          in: query
-          description: Comma-separated list of country codes
-          schema:
-            type: string
-            example: "US,CA,GB"
-      responses:
-        '200':
-          description: Demographic targeting options retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DemographicTargetingResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  /targeting/interests:
-    get:
-      tags: [Targeting]
-      summary: Get interest targeting options
-      description: Get available interest targeting options
-      parameters:
-        - name: country_code
-          in: query
-          description: Country code for interest targeting
-          schema:
-            type: string
-            default: "US"
-        - name: q
-          in: query
-          description: Search query for interests
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Interest targeting options retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InterestTargetingResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
-
-  /targeting/geos:
-    get:
-      tags: [Targeting]
-      summary: Get geo targeting options
-      description: Get available geographic targeting options
-      parameters:
-        - name: country_code
-          in: query
-          description: Country code for geo targeting
-          schema:
-            type: string
-            default: "US"
-        - name: q
-          in: query
-          description: Search query for locations
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Geographic targeting options retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GeoTargetingResponse'
-        '400':
-          description: Invalid request
-      security:
-        - OAuth2: [snapchat-marketing-api]
+security:
+  - OAuth2: [snapchat-profile-api]
 
 components:
   securitySchemes:
@@ -1006,812 +44,771 @@ components:
       type: oauth2
       flows:
         authorizationCode:
-          authorizationUrl: https://accounts.snapchat.com/accounts/oauth2/auth
-          tokenUrl: https://accounts.snapchat.com/accounts/oauth2/token
+          authorizationUrl: https://accounts.snapchat.com/login/oauth2/authorize
+          tokenUrl: https://accounts.snapchat.com/login/oauth2/access_token
+          refreshUrl: https://accounts.snapchat.com/login/oauth2/access_token
           scopes:
-            snapchat-marketing-api: Access to Snapchat Marketing API
+            snapchat-profile-api: Access to Public Profile API endpoints
 
   schemas:
-    # Organization
-    Organization:
+    PublicProfile:
       type: object
       properties:
         id:
           type: string
-          description: Organization ID
-        name:
-          type: string
-          description: Organization name
-        type:
-          type: string
-          enum: [DIRECT_ADVERTISER, PARTNER]
-          description: Organization type
-        created_at:
-          type: string
-          format: date-time
-          description: Creation timestamp
-        updated_at:
-          type: string
-          format: date-time
-          description: Last update timestamp
-        state:
-          type: string
-          enum: [ACTIVE, PAUSED]
-          description: Organization state
-
-    OrganizationListResponse:
-      type: object
-      properties:
-        organizations:
-          type: array
-          items:
-            $ref: '#/components/schemas/Organization'
-        paging:
-          $ref: '#/components/schemas/Paging'
-
-    OrganizationResponse:
-      type: object
-      properties:
-        organization:
-          $ref: '#/components/schemas/Organization'
-
-    # Ad Account
-    AdAccount:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Ad account ID
-        name:
-          type: string
-          description: Ad account name
-        type:
-          type: string
-          enum: [DIRECT_ADVERTISER, PARTNER, CHILD]
-          description: Ad account type
-        status:
-          type: string
-          enum: [ACTIVE, PAUSED, PENDING, REJECTED, SUSPENDED]
-          description: Ad account status
+          format: uuid
+          description: UUID of the profile
         organization_id:
           type: string
-          description: Parent organization ID
-        currency:
+          format: uuid
+          description: UUID of the organization the profile belongs to
+        display_name:
           type: string
-          description: Account currency (ISO 4217)
-          example: "USD"
-        timezone:
+          description: Profile display name
+        description:
           type: string
-          description: Account timezone
-          example: "America/Los_Angeles"
-        created_at:
+          description: Optional description of the profile
+        category:
           type: string
-          format: date-time
-          description: Creation timestamp
-        updated_at:
+          enum: [CATEGORY_V3_UNKNOWN, CATEGORY_V3_BUSINESS_GROUP, CATEGORY_V3_PEOPLE, CATEGORY_V3_PRODUCT_BRAND]
+          description: Category of the profile
+        subcategory:
           type: string
-          format: date-time
-          description: Last update timestamp
-
-    AdAccountListResponse:
-      type: object
-      properties:
-        adaccounts:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdAccount'
-        paging:
-          $ref: '#/components/schemas/Paging'
-
-    AdAccountResponse:
-      type: object
-      properties:
-        adaccount:
-          $ref: '#/components/schemas/AdAccount'
-
-    # Campaign
-    Campaign:
-      type: object
-      properties:
-        id:
+          description: Sub category of the profile
+        email:
           type: string
-          description: Campaign ID
-          readOnly: true
-        name:
+          description: Optional email for the profile
+        phone_number:
           type: string
-          description: Campaign name
-          maxLength: 255
-        status:
+          description: Optional phone number for the profile
+        website:
           type: string
-          enum: [ACTIVE, PAUSED, PENDING, ARCHIVED]
-          description: Campaign status
-        objective_v2_properties:
-          $ref: '#/components/schemas/ObjectiveV2Properties'
-        start_time:
+          description: Optional website URL for the profile
+        logo_urls:
+          $ref: '#/components/schemas/LogoUrls'
+        address_line_1:
           type: string
-          format: date-time
-          description: Campaign start time
-        end_time:
+          description: Optional address for the profile
+        address_line_2:
           type: string
-          format: date-time
-          description: Campaign end time
-        created_at:
+          description: Optional address for the profile
+        address_line_3:
           type: string
-          format: date-time
-          description: Creation timestamp
-          readOnly: true
-        updated_at:
+          description: Optional address for the profile
+        locality:
           type: string
-          format: date-time
-          description: Last update timestamp
-          readOnly: true
-
-    ObjectiveV2Properties:
-      type: object
-      properties:
-        objective_type:
+          description: Optional locality (city) for the profile
+        administrative_district_level_1:
           type: string
-          enum: [AWARENESS, VIDEO_VIEWS, REACH, WEBSITE_CONVERSIONS, APP_INSTALLS, 
-                 LEAD_GENERATION, DRIVE_TRAFFIC, CATALOGUE_SALES]
-          description: Campaign objective type
-        conversion_optimization_event:
+          description: Optional state for the profile
+        administrative_district_level_2:
           type: string
-          enum: [PAGE_VIEW, VIEW_CONTENT, ADD_CART, ADD_BILLING, COMPLETE_REGISTRATION,
-                 SEARCH, LEVEL_COMPLETE, TUTORIAL_COMPLETE, INVITE, LOGIN, SHARE,
-                 RESERVE, ACHIEVEMENT_UNLOCKED, SPENT_CREDITS, RATE, START_CHECKOUT,
-                 ADD_TO_WISHLIST, PURCHASE, SUBSCRIBE]
-          description: Conversion optimization event
-
-    CampaignListResponse:
-      type: object
-      properties:
-        campaigns:
-          type: array
-          items:
-            $ref: '#/components/schemas/Campaign'
-        paging:
-          $ref: '#/components/schemas/Paging'
-
-    CampaignResponse:
-      type: object
-      properties:
-        campaign:
-          $ref: '#/components/schemas/Campaign'
-
-    # Ad Squad
-    AdSquad:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Ad squad ID
-          readOnly: true
-        name:
-          type: string
-          description: Ad squad name
-          maxLength: 255
-        campaign_id:
-          type: string
-          description: Parent campaign ID
-        status:
-          type: string
-          enum: [ACTIVE, PAUSED, PENDING, ARCHIVED]
-          description: Ad squad status
-        type:
-          type: string
-          enum: [SNAP_ADS, STORY_ADS, COLLECTION_ADS, COMMERCIAL_ADS]
-          description: Ad squad type
-        placement_v2:
-          $ref: '#/components/schemas/PlacementV2'
-        billing_event:
-          type: string
-          enum: [IMPRESSION, SWIPE]
-          description: Billing event
-        bid_micro:
-          type: integer
-          description: Bid amount in micro currency (1/1000000)
-        daily_budget_micro:
-          type: integer
-          description: Daily budget in micro currency
-        lifetime_budget_micro:
-          type: integer
-          description: Lifetime budget in micro currency
-        start_time:
-          type: string
-          format: date-time
-          description: Ad squad start time
-        end_time:
-          type: string
-          format: date-time
-          description: Ad squad end time
-        targeting:
-          $ref: '#/components/schemas/Targeting'
-        created_at:
-          type: string
-          format: date-time
-          description: Creation timestamp
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          description: Last update timestamp
-          readOnly: true
-
-    PlacementV2:
-      type: object
-      properties:
-        config:
-          type: string
-          enum: [AUTOMATIC_PLACEMENT, FEED_PLACEMENT_ONLY]
-          description: Placement configuration
-
-    Targeting:
-      type: object
-      properties:
-        demographics:
-          type: array
-          items:
-            $ref: '#/components/schemas/DemographicTargeting'
-          description: Demographic targeting
-        geos:
-          type: array
-          items:
-            $ref: '#/components/schemas/GeoTargeting'
-          description: Geographic targeting
-        interests:
-          type: array
-          items:
-            type: string
-          description: Interest targeting IDs
-        segments:
-          type: array
-          items:
-            type: string
-          description: Audience segment IDs
-        enable_targeting_expansion:
-          type: boolean
-          description: Enable targeting expansion
-        regulated_content:
-          type: boolean
-          description: Mark content as regulated
-
-    DemographicTargeting:
-      type: object
-      properties:
-        min_age:
-          type: integer
-          minimum: 13
-          maximum: 65
-          description: Minimum age
-        max_age:
-          type: integer
-          minimum: 13
-          maximum: 65
-          description: Maximum age
-        genders:
-          type: array
-          items:
-            type: string
-            enum: [MALE, FEMALE]
-          description: Gender targeting
-        languages:
-          type: array
-          items:
-            type: string
-          description: Language targeting (ISO 639-1)
-        advanced_demographics:
-          type: array
-          items:
-            type: string
-          description: Advanced demographic IDs
-
-    GeoTargeting:
-      type: object
-      properties:
-        country_code:
-          type: string
-          description: Country code (ISO 3166-1 alpha-2)
-          example: "US"
-        region:
-          type: string
-          description: Region or state code
-        metro:
-          type: string
-          description: Metro area ID
+          description: Optional state for the profile
         postal_code:
           type: string
-          description: Postal/ZIP code
-
-    AdSquadListResponse:
-      type: object
-      properties:
-        adsquads:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdSquad'
-        paging:
-          $ref: '#/components/schemas/Paging'
-
-    AdSquadResponse:
-      type: object
-      properties:
-        adsquad:
-          $ref: '#/components/schemas/AdSquad'
-
-    # Ad
-    Ad:
-      type: object
-      properties:
-        id:
+          description: Optional zipcode for the profile
+        l_90_country_code:
           type: string
-          description: Ad ID
-          readOnly: true
-        name:
+          description: Two-letter country code of profile owner's location over past 90 days
+        country:
           type: string
-          description: Ad name
-          maxLength: 255
-        ad_squad_id:
+          description: Country code of the profile
+        snap_user_name:
           type: string
-          description: Parent ad squad ID
-        creative_id:
+          description: Snap username this profile is hosted on
+        store_id:
           type: string
-          description: Creative ID
-        status:
+          format: uuid
+          description: Optional store ID if profile is linked to a store
+        profile_type:
           type: string
-          enum: [ACTIVE, PAUSED, PENDING, ARCHIVED]
-          description: Ad status
-        created_at:
+          enum: [STORY_STUDIO_PUBLISHER, PUBLISHER_WITH_HOST_USER, PUBLIC_PROFILE, PUBLIC_PROFILE_WITH_PUBLISHER_CONTENT]
+          description: Profile type
+        profile_tier:
           type: string
-          format: date-time
-          description: Creation timestamp
-          readOnly: true
-        updated_at:
+          enum: [TIER_UNKNOWN, TIER_STANDARD, TIER_PUBLIC, TIER_PUBLIC_OFFICIAL]
+          description: Profile tier
+        profile_icon_primary_color_hex:
           type: string
-          format: date-time
-          description: Last update timestamp
-          readOnly: true
-
-    AdListResponse:
-      type: object
-      properties:
-        ads:
-          type: array
-          items:
-            $ref: '#/components/schemas/Ad'
-        paging:
-          $ref: '#/components/schemas/Paging'
-
-    AdResponse:
-      type: object
-      properties:
-        ad:
-          $ref: '#/components/schemas/Ad'
-
-    # Creative
-    Creative:
-      type: object
-      properties:
-        id:
+          description: Hex color value representing most prominent color in Profile Icon
+        internal_profile_category:
           type: string
-          description: Creative ID
-          readOnly: true
-        name:
+          enum: [UNKNOWN, BUSINESS, PERSON, PUBLISHER]
+          description: Internal profile category
+        subscriber_count:
           type: string
-          description: Creative name
-          maxLength: 255
-        type:
+          description: Number of subscribers that the profile has
+        spotlight_views:
           type: string
-          enum: [SNAP_AD, STORY_AD, COLLECTION_AD, COMMERCIAL_AD]
-          description: Creative type
-        packaging_status:
-          type: string
-          enum: [PENDING, SUCCESS, ERROR]
-          description: Creative packaging status
-          readOnly: true
-        top_snap_media_id:
-          type: string
-          description: Top snap media ID
-        headline:
-          type: string
-          description: Creative headline
-          maxLength: 34
-        call_to_action:
-          type: string
-          enum: [APPLY_NOW, BOOK_NOW, CALL_NOW, DOWNLOAD, GET_DIRECTIONS, INSTALL_APP,
-                 LEARN_MORE, OPEN_APP, ORDER_NOW, PLAY_GAME, SEE_MORE, SHOP_NOW, 
-                 SIGN_UP, SUBSCRIBE, SWIPE_UP, USE_APP, WATCH_MORE]
-          description: Call-to-action button
-        profile_properties:
-          $ref: '#/components/schemas/ProfileProperties'
-        brand_name:
-          type: string
-          description: Brand name override
-          maxLength: 25
-        shareable:
+          description: Number of spotlight views (last 24 hours)
+        share_authorized_data_with_api_partners:
           type: boolean
-          description: Whether creative is shareable
+          description: Indicates if authorized profile data is shared with API partners
+
+    LogoUrls:
+      type: object
+      properties:
+        original_logo_url:
+          type: string
+          description: URL string for original logo image, 1280px wide
+        discover_feed_logo_url:
+          type: string
+          description: URL string for logo image, 72px wide
+        mega_profile_logo_url:
+          type: string
+          description: URL string for logo image, 90px wide
+        manage_profile_logo_url:
+          type: string
+          description: URL string for logo image, 640px wide
+
+    PublicProfileResponse:
+      type: object
+      properties:
+        sub_request_status:
+          type: string
+          enum: [SUCCESS, ERROR, PARTIAL]
+          description: Status of the sub-request
+        public_profile:
+          $ref: '#/components/schemas/PublicProfile'
+        sub_request_error_reason:
+          type: string
+          description: Error reason if sub_request_status is ERROR or PARTIAL
+
+    ApiResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+          format: uuid
+          description: UUID of the request
+        request_status:
+          type: string
+          enum: [SUCCESS, ERROR, PARTIAL]
+          description: Status of the request
+        debug_message:
+          type: string
+          description: Debug information if request_status is ERROR or PARTIAL
+        display_message:
+          type: string
+          description: Display information if request_status is ERROR or PARTIAL
+        error_code:
+          type: string
+          description: Error code if request_status is ERROR or PARTIAL
+
+    ProfileListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            public_profiles:
+              type: array
+              items:
+                $ref: '#/components/schemas/PublicProfileResponse'
+            paging:
+              $ref: '#/components/schemas/Paging'
+
+    SingleProfileResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            public_profiles:
+              type: array
+              items:
+                $ref: '#/components/schemas/PublicProfileResponse'
+              maxItems: 1
+
+    MyProfileResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            public_profile:
+              $ref: '#/components/schemas/PublicProfile'
+
+    Paging:
+      type: object
+      properties:
+        next_page_id:
+          type: string
+          description: Encoded string for next page cursor
+        next_link:
+          type: string
+          description: Encoded URL string with original base URL, limit, and cursor
+
+    ChangeLog:
+      type: object
+      properties:
+        url:
+          type: string
+          description: Signed URL to the change log file
+
+    ChangeLogResponse:
+      type: object
+      properties:
+        sub_request_status:
+          type: string
+          enum: [SUCCESS, ERROR, PARTIAL]
+        change_log:
+          $ref: '#/components/schemas/ChangeLog'
+
+    ChangeLogsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            change_logs:
+              type: array
+              items:
+                $ref: '#/components/schemas/ChangeLogResponse'
+
+    ProfileIdResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            profile_id:
+              type: string
+              format: uuid
+              description: UUID of the creator's profile
+
+    SharedSnap:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Snap ID
+        story_id:
+          type: string
+          format: uuid
+          description: ID of the full story
+        media_metadata:
+          $ref: '#/components/schemas/MediaMetadata'
         created_at:
           type: string
           format: date-time
-          description: Creation timestamp
-          readOnly: true
-        updated_at:
+          description: When the snap was created
+        sponsor:
+          $ref: '#/components/schemas/Sponsor'
+        username:
           type: string
-          format: date-time
-          description: Last update timestamp
-          readOnly: true
+          description: Snap username of the creator tagging the brand
+        display_name:
+          type: string
+          description: Display name of the creator's public profile
+        multi_snaps_bundle_id:
+          type: string
+          description: Bundle ID for when story > 10s
+        story_type:
+          type: string
+          description: Type of story (e.g., SAVED_STORY)
 
-    ProfileProperties:
+    MediaMetadata:
+      type: object
+      properties:
+        media_type:
+          type: string
+          enum: [MEDIA_TYPE_IMAGE, MEDIA_TYPE_VIDEO]
+          description: Type of media
+        media_url:
+          type: string
+          description: URL to the media content
+        thumbnail_url:
+          type: string
+          description: URL to the thumbnail
+
+    Sponsor:
       type: object
       properties:
         profile_id:
           type: string
-          description: Profile ID for the creative
-      required: [profile_id]
+          format: uuid
+          description: Profile ID of the brand being tagged
+        display_name:
+          type: string
+          description: Display name of the brand
+        sponsor_status:
+          type: string
+          enum: [PENDING, REJECTED, NOT_SPECIFIED, AUTO_APPROVED]
+          description: Status of the sponsorship
 
-    CreativeListResponse:
+    SharedSnapResponse:
       type: object
       properties:
-        creatives:
-          type: array
-          items:
-            $ref: '#/components/schemas/Creative'
-        paging:
-          $ref: '#/components/schemas/Paging'
+        sub_request_status:
+          type: string
+          enum: [SUCCESS, ERROR, PARTIAL]
+        shared_snap:
+          $ref: '#/components/schemas/SharedSnap'
 
-    CreativeResponse:
-      type: object
-      properties:
-        creative:
-          $ref: '#/components/schemas/Creative'
+    SharedSnapsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            shared_snaps:
+              type: array
+              items:
+                $ref: '#/components/schemas/SharedSnapResponse'
 
-    # Media
-    Media:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Media ID
-          readOnly: true
-        name:
-          type: string
-          description: Media name
-        type:
-          type: string
-          enum: [IMAGE, VIDEO]
-          description: Media type
-          readOnly: true
-        media_status:
-          type: string
-          enum: [PENDING_UPLOAD, PROCESSING, READY, ERROR]
-          description: Media processing status
-          readOnly: true
-        file_name:
-          type: string
-          description: Original file name
-          readOnly: true
-        download_link:
-          type: string
-          format: uri
-          description: Download link for the media
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          description: Creation timestamp
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          description: Last update timestamp
-          readOnly: true
+    ClaimMediaResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            media_entity_id:
+              type: string
+              format: uuid
+              description: ID of the claimed media entity
 
-    MediaListResponse:
-      type: object
-      properties:
-        media:
-          type: array
-          items:
-            $ref: '#/components/schemas/Media'
-        paging:
-          $ref: '#/components/schemas/Paging'
+paths:
+  # Public Endpoints - No authorization required
+  /public/v1/public_profiles/change_logs:
+    get:
+      summary: List Public Profile Change Logs
+      description: Returns a list of signed URLs to change logs containing IDs of public profiles that were created, modified, or deleted.
+      operationId: listChangeLogss
+      parameters:
+        - name: start_at_timestamp
+          in: query
+          description: Timestamp to filter profiles created or updated after this date
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          description: Number of change logs to return per page (default 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+        - name: cursor
+          in: query
+          description: Encoded cursor for next page
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeLogsResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
 
-    MediaResponse:
-      type: object
-      properties:
-        media:
-          $ref: '#/components/schemas/Media'
+  /public/v1/public_profiles/discover:
+    get:
+      summary: Discover Creators
+      description: Search for creators based on follower count, spotlight views, country, and other filters. Results are sorted by follower count.
+      operationId: discoverCreators
+      parameters:
+        - name: limit
+          in: query
+          description: Number of results to return per page (default 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+        - name: cursor
+          in: query
+          description: Pagination encoded cursor for next page
+          required: false
+          schema:
+            type: string
+        - name: creator_l_90_country_codes
+          in: query
+          description: Creator's country code(s) (ISO 3166-1 alpha-2)
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              pattern: '^[A-Z]{2}$'
+        - name: creator_categories
+          in: query
+          description: Creator's subcategories
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: min_followers
+          in: query
+          description: Minimum number of followers
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - name: max_followers
+          in: query
+          description: Maximum number of followers
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - name: min_spotlight_views
+          in: query
+          description: Minimum spotlight views (last 24 hours)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - name: max_spotlight_views
+          in: query
+          description: Maximum spotlight views (last 24 hours)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - name: can_share_data
+          in: query
+          description: Only include creators who opt to share authorized data
+          required: false
+          schema:
+            type: boolean
+        - name: query
+          in: query
+          description: Keyword search on username and display name
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileListResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
 
-    # Audience Segment
-    AudienceSegment:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Audience segment ID
-          readOnly: true
-        name:
-          type: string
-          description: Audience segment name
-          maxLength: 255
-        description:
-          type: string
-          description: Audience segment description
-          maxLength: 500
-        source_type:
-          type: string
-          enum: [FIRST_PARTY, PIXEL, ENGAGEMENT, LOOKALIKE]
-          description: Source type of the audience
-        retention_in_days:
-          type: integer
-          minimum: 1
-          maximum: 180
-          description: Retention period in days
-        approximate_number_users:
-          type: integer
-          description: Approximate number of users
-          readOnly: true
-        status:
-          type: string
-          enum: [PREPARING, UPLOADING, PENDING, PROCESSING, READY, TOO_SMALL, ERROR]
-          description: Audience segment status
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          description: Creation timestamp
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          description: Last update timestamp
-          readOnly: true
+  /public/v1/public_profiles/search:
+    get:
+      summary: Search for Profiles
+      description: Returns a list of public profiles that match the search criteria by username or display name.
+      operationId: searchProfiles
+      parameters:
+        - name: query
+          in: query
+          description: Snap username or profile display name to search by
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of profiles to return (default 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+        - name: category
+          in: query
+          description: Profile category
+          required: false
+          schema:
+            type: string
+            enum: [CATEGORY_PERSON, CATEGORY_BUSINESS]
+            default: CATEGORY_BUSINESS
+        - name: tier
+          in: query
+          description: Profile tier
+          required: false
+          schema:
+            type: string
+            enum: [TIER_PUBLIC, TIER_PUBLIC_OFFICIAL]
+            default: TIER_PUBLIC_OFFICIAL
+        - name: includeStandard
+          in: query
+          description: Whether to include standard tier public profiles
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileListResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
 
-    AudienceSegmentListResponse:
-      type: object
-      properties:
-        segments:
-          type: array
-          items:
-            $ref: '#/components/schemas/AudienceSegment'
-        paging:
-          $ref: '#/components/schemas/Paging'
+  /public/v1/public_profiles/{profile_id}:
+    get:
+      summary: Get Profile by ID (Public)
+      description: Retrieves public metadata of a Public Profile by its ID. No authorization required.
+      operationId: getPublicProfileById
+      parameters:
+        - name: profile_id
+          in: path
+          description: Profile ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleProfileResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Profile not found
+        '500':
+          description: Internal server error
 
-    AudienceSegmentResponse:
-      type: object
-      properties:
-        segment:
-          $ref: '#/components/schemas/AudienceSegment'
+  /public/v1/snaps/{snap_id}/public_profile:
+    get:
+      summary: Get Profile by Snap ID
+      description: Retrieves a user's public profile ID given the snap ID of a snap they created.
+      operationId: getProfileBySnapId
+      parameters:
+        - name: snap_id
+          in: path
+          description: Snap ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileIdResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Snap not found
+        '500':
+          description: Internal server error
 
-    SegmentUser:
-      type: object
-      properties:
-        hashed_email:
-          type: string
-          description: SHA-256 hashed email address
-        hashed_phone:
-          type: string
-          description: SHA-256 hashed phone number
-        hashed_mobile_ad_id:
-          type: string
-          description: SHA-256 hashed mobile advertising ID
+  # Authorized Endpoints - Require authorization
+  /v1/organizations/{organization_id}/public_profiles:
+    get:
+      summary: Get Profiles by Organization ID
+      description: Returns all profiles that the user has permission to access in the designated organization.
+      operationId: getProfilesByOrganization
+      parameters:
+        - name: organization_id
+          in: path
+          description: Organization ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Pagination limit size (default 10)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+        - name: cursor
+          in: query
+          description: Pagination encoded cursor for next page
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileListResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Authorization permission denied
+        '500':
+          description: Internal server error
 
-    SegmentUsersResponse:
-      type: object
-      properties:
-        number_uploaded_users:
-          type: integer
-          description: Number of users successfully uploaded
-        upload_status:
-          type: string
-          enum: [SUCCESS, PARTIAL_SUCCESS, ERROR]
-          description: Upload status
+  /v1/public_profiles/{profile_id}:
+    get:
+      summary: Get Profile by ID (Authorized)
+      description: Retrieves detailed profile information for authorized profiles. Requires profile owner authorization.
+      operationId: getAuthorizedProfileById
+      parameters:
+        - name: profile_id
+          in: path
+          description: Profile ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleProfileResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Authorization permission denied
+        '404':
+          description: Profile not found
+        '500':
+          description: Internal server error
 
-    # Analytics
-    Stats:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Entity ID
-        type:
-          type: string
-          enum: [CAMPAIGN, ADSQUAD, AD]
-          description: Entity type
-        granularity:
-          type: string
-          enum: [TOTAL, DAY, HOUR]
-          description: Time granularity
-        start_time:
-          type: string
-          format: date-time
-          description: Start time of the stats period
-        end_time:
-          type: string
-          format: date-time
-          description: End time of the stats period
-        finalized_data_end_time:
-          type: string
-          format: date-time
-          description: End time of finalized data
-        stats:
-          $ref: '#/components/schemas/StatsData'
-        dimension_stats:
-          type: array
-          items:
-            $ref: '#/components/schemas/DimensionStats'
-          description: Breakdown stats by dimensions
+  /v1/public_profiles/my_profile:
+    get:
+      summary: Get My Profile
+      description: Retrieves the current user's public profile given their auth token.
+      operationId: getMyProfile
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyProfileResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
 
-    StatsData:
-      type: object
-      properties:
-        impressions:
-          type: integer
-          description: Number of impressions
-        swipes:
-          type: integer
-          description: Number of swipes
-        spend:
-          type: integer
-          description: Spend in micro currency
-        video_views:
-          type: integer
-          description: Number of video views
-        quartile_1:
-          type: integer
-          description: 25% video completion views
-        quartile_2:
-          type: integer
-          description: 50% video completion views
-        quartile_3:
-          type: integer
-          description: 75% video completion views
-        view_completion:
-          type: integer
-          description: 100% video completion views
-        conversion_purchases:
-          type: integer
-          description: Number of purchase conversions
-        conversion_purchases_value:
-          type: integer
-          description: Value of purchase conversions in micro currency
-        conversion_app_opens:
-          type: integer
-          description: Number of app open conversions
-        conversion_sign_ups:
-          type: integer
-          description: Number of sign up conversions
+  /v1/public_profiles/{profile_id}/shared_snaps:
+    get:
+      summary: Retrieve Collaboration Snaps
+      description: Retrieves paid partnership posts where the brand is tagged by a creator.
+      operationId: getCollaborationSnaps
+      parameters:
+        - name: profile_id
+          in: path
+          description: Profile ID of the brand being tagged
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Pagination limit size (default 10)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+        - name: cursor
+          in: query
+          description: Pagination encoded cursor for next page
+          required: false
+          schema:
+            type: string
+        - name: fetch_in_aggregate_view
+          in: query
+          description: Include Story ID and Story type in response (default true)
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedSnapsResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Authorization permission denied
+        '404':
+          description: Profile not found
+        '500':
+          description: Internal server error
 
-    DimensionStats:
-      type: object
-      properties:
-        dimension:
-          type: string
-          description: Dimension name
-        dimension_value:
-          type: string
-          description: Dimension value
-        stats:
-          $ref: '#/components/schemas/StatsData'
-
-    StatsResponse:
-      type: object
-      properties:
-        total_stats:
-          type: array
-          items:
-            $ref: '#/components/schemas/Stats'
-        paging:
-          $ref: '#/components/schemas/Paging'
-
-    # Targeting Options
-    DemographicTargetingResponse:
-      type: object
-      properties:
-        demographic_options:
-          type: array
-          items:
-            $ref: '#/components/schemas/DemographicOption'
-
-    DemographicOption:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Option ID
-        name:
-          type: string
-          description: Option name
-        path:
-          type: string
-          description: Option path
-        country_code:
-          type: string
-          description: Country code
-
-    InterestTargetingResponse:
-      type: object
-      properties:
-        interest_options:
-          type: array
-          items:
-            $ref: '#/components/schemas/InterestOption'
-
-    InterestOption:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Interest ID
-        name:
-          type: string
-          description: Interest name
-        path:
-          type: string
-          description: Interest path
-        targetable:
-          type: boolean
-          description: Whether interest is targetable
-
-    GeoTargetingResponse:
-      type: object
-      properties:
-        geo_options:
-          type: array
-          items:
-            $ref: '#/components/schemas/GeoOption'
-
-    GeoOption:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Geo ID
-        name:
-          type: string
-          description: Geo name
-        country_code:
-          type: string
-          description: Country code
-        type:
-          type: string
-          enum: [COUNTRY, REGION, METRO, POSTAL_CODE]
-          description: Geo type
-
-    # Common
-    Paging:
-      type: object
-      properties:
-        next_link:
-          type: string
-          format: uri
-          description: Link to next page
-        prev_link:
-          type: string
-          format: uri
-          description: Link to previous page
-
-security:
-  - OAuth2: [snapchat-marketing-api]
+  /v1/adaccounts/{adAccountId}/claim_media_by_snap_reference:
+    post:
+      summary: Claim Media for Advertising
+      description: Turns an organic paid partnership post into an ad by claiming the media.
+      operationId: claimMediaBySnapReference
+      parameters:
+        - name: adAccountId
+          in: path
+          description: Ad account ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - snap_id
+              properties:
+                snap_id:
+                  type: string
+                  format: uuid
+                  description: ID of the organic content to be turned into an ad
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimMediaResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Authorization permission denied
+        '500':
+          description: Internal server error
 
 tags:
-  - name: Organizations
-    description: Organization and account management
-  - name: Ad Accounts
-    description: Ad account management and settings
-  - name: Campaigns
-    description: Campaign creation and management
-  - name: Ad Squads
-    description: Ad squad targeting, budgeting, and optimization
-  - name: Ads
-    description: Individual ad management
-  - name: Creatives
-    description: Creative asset management and optimization
-  - name: Media
-    description: Media upload and management
-  - name: Audience Segments
-    description: Custom audience creation and management
-  - name: Analytics
-    description: Performance reporting and analytics
-  - name: Targeting
-    description: Targeting options and audience discovery
+  - name: Public Endpoints
+    description: Endpoints that don't require profile owner authorization
+  - name: Authorized Endpoints
+    description: Endpoints that require profile owner authorization or data sharing opt-in
+  - name: Creator Discovery
+    description: Find and search for creators and public profiles
+  - name: Profile Management
+    description: Retrieve and manage public profile information
+  - name: Content Collaboration
+    description: Manage brand-creator collaboration content

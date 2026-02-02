@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Instagram Graph API
-  version: "20.0"
+  version: "24.0"
   description: |
     The Instagram Graph API allows Instagram Business and Creator accounts to access Instagram data.
     This API is built on the Graph API and allows businesses to manage their Instagram presence,

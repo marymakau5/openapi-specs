@@ -357,6 +357,71 @@ paths:
       security:
         - OAuth2: [vote]
 
+  /api/info:
+    get:
+      tags: [Submissions]
+      summary: Get information about links/submissions
+      description: |
+        Return a listing of links/submissions specified by their fullnames.
+        This is useful for getting detailed information about specific submissions by their IDs.
+      parameters:
+        - name: id
+          in: query
+          description: A comma-separated list of link fullnames (e.g., t3_abc123,t3_def456)
+          schema:
+            type: string
+            example: "t3_abc123,t3_def456"
+        - name: sr_name
+          in: query
+          description: Restrict results to a specific subreddit (optional)
+          schema:
+            type: string
+            example: "AskReddit"
+        - name: url
+          in: query
+          description: Return information about the submission with the given URL (optional)
+          schema:
+            type: string
+            format: url
+      responses:
+        '200':
+          description: Link/submission information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                    enum: [Listing]
+                  data:
+                    type: object
+                    properties:
+                      modhash:
+                        type: string
+                      dist:
+                        type: integer
+                      children:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum: [t3]
+                            data:
+                              $ref: '#/components/schemas/Submission'
+                      after:
+                        type: string
+                        nullable: true
+                      before:
+                        type: string
+                        nullable: true
+        '400':
+          description: Invalid parameters
+        '429':
+          description: Rate limit exceeded
+
   # Subreddit Information
   /r/{subreddit}/about:
     get:

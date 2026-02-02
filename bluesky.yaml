@@ -526,6 +526,114 @@ paths:
                   cursor:
                     type: string
 
+  # Video Management
+  /xrpc/app.bsky.video.uploadVideo:
+    post:
+      tags: [Video]
+      summary: Upload video
+      description: Upload a video file to Bluesky for use in posts
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - video
+              properties:
+                video:
+                  type: string
+                  format: binary
+                  description: Video file to upload (MP4, MOV, WEBM formats supported)
+                alt_text:
+                  type: string
+                  description: Alternative text description for accessibility
+                  maxLength: 1000
+                caption:
+                  type: string
+                  description: Caption for the video
+                  maxLength: 2200
+      responses:
+        '200':
+          description: Video uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  blob:
+                    $ref: '#/components/schemas/Blob'
+                  video:
+                    $ref: '#/components/schemas/VideoEmbed'
+        '400':
+          description: Invalid video format or size
+        '413':
+          description: Video file too large
+
+  /xrpc/app.bsky.video.getJobStatus:
+    get:
+      tags: [Video]
+      summary: Get video processing status
+      description: Check the processing status of an uploaded video
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: jobId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Video processing job identifier
+      responses:
+        '200':
+          description: Video processing status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  state:
+                    type: string
+                    enum: [JOB_STATE_PROCESSING, JOB_STATE_COMPLETED, JOB_STATE_FAILED]
+                  progress:
+                    type: integer
+                    minimum: 0
+                    maximum: 100
+                  blob:
+                    $ref: '#/components/schemas/Blob'
+                  error:
+                    type: string
+                    description: Error message if processing failed
+
+  /xrpc/app.bsky.video.defs:
+    get:
+      tags: [Video]
+      summary: Get video definitions
+      description: Get video-related type definitions and limits
+      responses:
+        '200':
+          description: Video definitions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  maxFileSize:
+                    type: integer
+                    description: Maximum video file size in bytes
+                  maxDuration:
+                    type: integer
+                    description: Maximum video duration in seconds
+                  supportedFormats:
+                    type: array
+                    items:
+                      type: string
+                    description: Supported video file formats
+
   # Social Graph
   /xrpc/app.bsky.graph.getFollows:
     get:
@@ -1689,6 +1797,58 @@ components:
               val:
                 type: string
 
+    Blob:
+      type: object
+      required:
+        - '$type'
+        - ref
+        - mimeType
+        - size
+      properties:
+        '$type':
+          type: string
+          enum: [blob]
+        ref:
+          $ref: '#/components/schemas/CidLink'
+        mimeType:
+          type: string
+          description: MIME type of the blob content
+        size:
+          type: integer
+          description: Size of the blob in bytes
+
+    CidLink:
+      type: object
+      required:
+        - '$link'
+      properties:
+        '$link':
+          type: string
+          description: Content identifier (CID) link
+
+    VideoEmbed:
+      type: object
+      required:
+        - '$type'
+        - video
+      properties:
+        '$type':
+          type: string
+          enum: [app.bsky.embed.video]
+        video:
+          $ref: '#/components/schemas/Blob'
+        alt:
+          type: string
+          description: Alternative text description
+          maxLength: 1000
+        aspectRatio:
+          type: object
+          properties:
+            width:
+              type: integer
+            height:
+              type: integer
+
 security:
   - BearerAuth: []
 
@@ -1697,6 +1857,8 @@ tags:
     description: User profiles and actor management
   - name: Feed
     description: Posts, timeline, and content feeds
+  - name: Video
+    description: Video upload and management
   - name: Graph
     description: Social graph, follows, blocks, and lists
   - name: Notifications
