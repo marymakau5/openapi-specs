@@ -1,0 +1,1709 @@
+openapi: 3.0.3
+info:
+  title: Bluesky API
+  description: |
+    Comprehensive Bluesky (AT Protocol) API covering social media functionality including posts, feeds, 
+    profiles, social graph, notifications, chat/DMs, and protocol-level operations.
+    
+    This API includes both Bluesky application lexicons (app.bsky.*) and AT Protocol core lexicons (com.atproto.*).
+    
+    Public endpoints can be accessed at: https://public.api.bsky.app
+    Authenticated requests are typically made to the user's PDS instance.
+  version: 1.0.0
+  contact:
+    name: Bluesky Documentation
+    url: https://docs.bsky.app
+  license:
+    name: MIT
+servers:
+  - url: https://public.api.bsky.app
+    description: Public Bluesky AppView API
+  - url: https://bsky.social
+    description: Main Bluesky instance
+paths:
+  # Actor (Profile/User) Management
+  /xrpc/app.bsky.actor.getPreferences:
+    get:
+      tags: [Actor]
+      summary: Get actor preferences
+      description: Get user preferences and settings
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActorPreferences'
+  
+  /xrpc/app.bsky.actor.putPreferences:
+    post:
+      tags: [Actor]
+      summary: Update actor preferences
+      description: Update user preferences and settings
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActorPreferences'
+      responses:
+        '200':
+          description: Preferences updated successfully
+  
+  /xrpc/app.bsky.actor.getProfile:
+    get:
+      tags: [Actor]
+      summary: Get actor profile
+      description: Get detailed profile information for a user
+      parameters:
+        - name: actor
+          in: query
+          required: true
+          description: Actor identifier (handle or DID)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActorProfile'
+  
+  /xrpc/app.bsky.actor.getProfiles:
+    get:
+      tags: [Actor]
+      summary: Get multiple actor profiles
+      description: Get profile information for multiple users
+      parameters:
+        - name: actors
+          in: query
+          required: true
+          description: List of actor identifiers
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Profiles retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profiles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActorProfile'
+  
+  /xrpc/app.bsky.actor.getSuggestions:
+    get:
+      tags: [Actor]
+      summary: Get suggested actors to follow
+      description: Get a list of suggested users to follow
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Suggestions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  actors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActorProfile'
+                  cursor:
+                    type: string
+  
+  /xrpc/app.bsky.actor.searchActors:
+    get:
+      tags: [Actor]
+      summary: Search for actors
+      description: Search for users by handle or display name
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 25
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  actors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActorProfile'
+                  cursor:
+                    type: string
+  
+  /xrpc/app.bsky.actor.searchActorsTypeahead:
+    get:
+      tags: [Actor]
+      summary: Typeahead search for actors
+      description: Fast typeahead search for users
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Typeahead results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  actors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActorProfile'
+
+  # Feed and Posts
+  /xrpc/app.bsky.feed.getTimeline:
+    get:
+      tags: [Feed]
+      summary: Get timeline feed
+      description: Get the user's timeline feed
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: algorithm
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Timeline retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feed:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FeedViewPost'
+                  cursor:
+                    type: string
+  
+  /xrpc/app.bsky.feed.getAuthorFeed:
+    get:
+      tags: [Feed]
+      summary: Get author's feed
+      description: Get posts from a specific author
+      parameters:
+        - name: actor
+          in: query
+          required: true
+          description: Actor identifier
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: filter
+          in: query
+          description: Filter posts type
+          schema:
+            type: string
+            enum: [posts_with_replies, posts_no_replies, posts_with_media, posts_and_author_threads]
+      responses:
+        '200':
+          description: Author feed retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feed:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FeedViewPost'
+                  cursor:
+                    type: string
+
+  /xrpc/app.bsky.feed.getPosts:
+    get:
+      tags: [Feed]
+      summary: Get posts by URIs
+      description: Get posts by their AT-URIs
+      parameters:
+        - name: uris
+          in: query
+          required: true
+          description: List of post URIs
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PostView'
+
+  /xrpc/app.bsky.feed.getPostThread:
+    get:
+      tags: [Feed]
+      summary: Get post thread
+      description: Get a post and its thread (replies)
+      parameters:
+        - name: uri
+          in: query
+          required: true
+          description: Post URI
+          schema:
+            type: string
+        - name: depth
+          in: query
+          description: How many levels of replies to fetch
+          schema:
+            type: integer
+            default: 6
+        - name: parentHeight
+          in: query
+          description: How many levels of parent posts to fetch
+          schema:
+            type: integer
+            default: 80
+      responses:
+        '200':
+          description: Post thread retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  thread:
+                    $ref: '#/components/schemas/ThreadViewPost'
+
+  /xrpc/app.bsky.feed.getLikes:
+    get:
+      tags: [Feed]
+      summary: Get post likes
+      description: Get users who liked a specific post
+      parameters:
+        - name: uri
+          in: query
+          required: true
+          description: Post URI
+          schema:
+            type: string
+        - name: cid
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Likes retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uri:
+                    type: string
+                  cid:
+                    type: string
+                  likes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          $ref: '#/components/schemas/ActorProfile'
+                        createdAt:
+                          type: string
+                          format: date-time
+                  cursor:
+                    type: string
+
+  /xrpc/app.bsky.feed.getRepostedBy:
+    get:
+      tags: [Feed]
+      summary: Get post reposts
+      description: Get users who reposted a specific post
+      parameters:
+        - name: uri
+          in: query
+          required: true
+          description: Post URI
+          schema:
+            type: string
+        - name: cid
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reposts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uri:
+                    type: string
+                  cid:
+                    type: string
+                  repostedBy:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          $ref: '#/components/schemas/ActorProfile'
+                        createdAt:
+                          type: string
+                          format: date-time
+                  cursor:
+                    type: string
+
+  /xrpc/app.bsky.feed.searchPosts:
+    get:
+      tags: [Feed]
+      summary: Search posts
+      description: Search for posts by content
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [top, latest]
+        - name: since
+          in: query
+          description: Filter posts after this date
+          schema:
+            type: string
+            format: date-time
+        - name: until
+          in: query
+          description: Filter posts before this date
+          schema:
+            type: string
+            format: date-time
+        - name: mentions
+          in: query
+          description: Filter by mentioned actor
+          schema:
+            type: string
+        - name: author
+          in: query
+          description: Filter by author
+          schema:
+            type: string
+        - name: lang
+          in: query
+          description: Filter by language
+          schema:
+            type: string
+        - name: domain
+          in: query
+          description: Filter by domain
+          schema:
+            type: string
+        - name: url
+          in: query
+          description: Filter by URL
+          schema:
+            type: string
+        - name: tag
+          in: query
+          description: Filter by hashtag
+          schema:
+            type: array
+            items:
+              type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 25
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PostView'
+                  hitsTotal:
+                    type: integer
+                  cursor:
+                    type: string
+
+  # Social Graph
+  /xrpc/app.bsky.graph.getFollows:
+    get:
+      tags: [Graph]
+      summary: Get follows
+      description: Get users that an actor follows
+      parameters:
+        - name: actor
+          in: query
+          required: true
+          description: Actor identifier
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Follows retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subject:
+                    $ref: '#/components/schemas/ActorProfile'
+                  follows:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActorProfile'
+                  cursor:
+                    type: string
+
+  /xrpc/app.bsky.graph.getFollowers:
+    get:
+      tags: [Graph]
+      summary: Get followers
+      description: Get users that follow an actor
+      parameters:
+        - name: actor
+          in: query
+          required: true
+          description: Actor identifier
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Followers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subject:
+                    $ref: '#/components/schemas/ActorProfile'
+                  followers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActorProfile'
+                  cursor:
+                    type: string
+
+  /xrpc/app.bsky.graph.getBlocks:
+    get:
+      tags: [Graph]
+      summary: Get blocked users
+      description: Get users that the authenticated user has blocked
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Blocked users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  blocks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActorProfile'
+                  cursor:
+                    type: string
+
+  /xrpc/app.bsky.graph.getMutes:
+    get:
+      tags: [Graph]
+      summary: Get muted users
+      description: Get users that the authenticated user has muted
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Muted users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mutes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActorProfile'
+                  cursor:
+                    type: string
+
+  /xrpc/app.bsky.graph.muteActor:
+    post:
+      tags: [Graph]
+      summary: Mute an actor
+      description: Mute a specific user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actor:
+                  type: string
+                  description: Actor identifier to mute
+              required: [actor]
+      responses:
+        '200':
+          description: Actor muted successfully
+
+  /xrpc/app.bsky.graph.unmuteActor:
+    post:
+      tags: [Graph]
+      summary: Unmute an actor
+      description: Unmute a previously muted user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actor:
+                  type: string
+                  description: Actor identifier to unmute
+              required: [actor]
+      responses:
+        '200':
+          description: Actor unmuted successfully
+
+  # Notifications
+  /xrpc/app.bsky.notification.listNotifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications
+      description: Get the user's notifications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: seenAt
+          in: query
+          description: Only return notifications after this timestamp
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  cursor:
+                    type: string
+                  seenAt:
+                    type: string
+                    format: date-time
+
+  /xrpc/app.bsky.notification.getUnreadCount:
+    get:
+      tags: [Notifications]
+      summary: Get unread count
+      description: Get count of unread notifications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: seenAt
+          in: query
+          description: Count notifications after this timestamp
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Unread count retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /xrpc/app.bsky.notification.updateSeen:
+    post:
+      tags: [Notifications]
+      summary: Mark notifications as seen
+      description: Update the last-seen timestamp for notifications
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                seenAt:
+                  type: string
+                  format: date-time
+                  description: Timestamp to mark as seen
+              required: [seenAt]
+      responses:
+        '200':
+          description: Notifications marked as seen successfully
+
+  # Chat/DM endpoints
+  /xrpc/chat.bsky.convo.listConvos:
+    get:
+      tags: [Chat]
+      summary: List conversations
+      description: Get the user's conversation list
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Conversations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  convos:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConvoView'
+                  cursor:
+                    type: string
+
+  /xrpc/chat.bsky.convo.getConvo:
+    get:
+      tags: [Chat]
+      summary: Get conversation
+      description: Get a specific conversation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: convoId
+          in: query
+          required: true
+          description: Conversation ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Conversation retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  convo:
+                    $ref: '#/components/schemas/ConvoView'
+
+  /xrpc/chat.bsky.convo.getMessages:
+    get:
+      tags: [Chat]
+      summary: Get conversation messages
+      description: Get messages from a specific conversation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: convoId
+          in: query
+          required: true
+          description: Conversation ID
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MessageView'
+                  cursor:
+                    type: string
+
+  /xrpc/chat.bsky.convo.sendMessage:
+    post:
+      tags: [Chat]
+      summary: Send message
+      description: Send a message to a conversation
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                convoId:
+                  type: string
+                  description: Conversation ID
+                message:
+                  type: object
+                  properties:
+                    text:
+                      type: string
+                      description: Message text
+                    facets:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Facet'
+                  required: [text]
+              required: [convoId, message]
+      responses:
+        '200':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageView'
+
+  # AT Protocol Repository Management
+  /xrpc/com.atproto.repo.createRecord:
+    post:
+      tags: [Repository]
+      summary: Create record
+      description: Create a new record in the repository
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                repo:
+                  type: string
+                  description: Repository identifier
+                collection:
+                  type: string
+                  description: NSID of the record collection
+                rkey:
+                  type: string
+                  description: Record key
+                validate:
+                  type: boolean
+                  default: true
+                record:
+                  type: object
+                  description: Record data
+                swapCommit:
+                  type: string
+                  description: CID for swap operation
+              required: [repo, collection, record]
+      responses:
+        '200':
+          description: Record created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uri:
+                    type: string
+                  cid:
+                    type: string
+                  commit:
+                    type: object
+                  validationStatus:
+                    type: string
+
+  /xrpc/com.atproto.repo.putRecord:
+    post:
+      tags: [Repository]
+      summary: Put record
+      description: Update or create a record at a specific path
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                repo:
+                  type: string
+                  description: Repository identifier
+                collection:
+                  type: string
+                  description: NSID of the record collection
+                rkey:
+                  type: string
+                  description: Record key
+                validate:
+                  type: boolean
+                  default: true
+                record:
+                  type: object
+                  description: Record data
+                swapRecord:
+                  type: string
+                  description: CID for swap operation
+                swapCommit:
+                  type: string
+                  description: CID for swap operation
+              required: [repo, collection, rkey, record]
+      responses:
+        '200':
+          description: Record updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uri:
+                    type: string
+                  cid:
+                    type: string
+                  commit:
+                    type: object
+                  validationStatus:
+                    type: string
+
+  /xrpc/com.atproto.repo.deleteRecord:
+    post:
+      tags: [Repository]
+      summary: Delete record
+      description: Delete a record from the repository
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                repo:
+                  type: string
+                  description: Repository identifier
+                collection:
+                  type: string
+                  description: NSID of the record collection
+                rkey:
+                  type: string
+                  description: Record key
+                swapRecord:
+                  type: string
+                  description: CID for swap operation
+                swapCommit:
+                  type: string
+                  description: CID for swap operation
+              required: [repo, collection, rkey]
+      responses:
+        '200':
+          description: Record deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commit:
+                    type: object
+
+  /xrpc/com.atproto.repo.getRecord:
+    get:
+      tags: [Repository]
+      summary: Get record
+      description: Get a specific record from the repository
+      parameters:
+        - name: repo
+          in: query
+          required: true
+          description: Repository identifier
+          schema:
+            type: string
+        - name: collection
+          in: query
+          required: true
+          description: NSID of the record collection
+          schema:
+            type: string
+        - name: rkey
+          in: query
+          required: true
+          description: Record key
+          schema:
+            type: string
+        - name: cid
+          in: query
+          description: Specific version CID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Record retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uri:
+                    type: string
+                  cid:
+                    type: string
+                  value:
+                    type: object
+
+  # Authentication/Session Management
+  /xrpc/com.atproto.server.createSession:
+    post:
+      tags: [Authentication]
+      summary: Create session
+      description: Create an authenticated session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                identifier:
+                  type: string
+                  description: Handle or email
+                password:
+                  type: string
+                  description: App password
+                authFactorToken:
+                  type: string
+                  description: 2FA token if required
+              required: [identifier, password]
+      responses:
+        '200':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessJwt:
+                    type: string
+                  refreshJwt:
+                    type: string
+                  handle:
+                    type: string
+                  did:
+                    type: string
+                  didDoc:
+                    type: object
+                  email:
+                    type: string
+                  emailConfirmed:
+                    type: boolean
+                  emailAuthFactor:
+                    type: boolean
+                  active:
+                    type: boolean
+                  status:
+                    type: string
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: JWT access token obtained from createSession
+
+  schemas:
+    ActorProfile:
+      type: object
+      properties:
+        did:
+          type: string
+        handle:
+          type: string
+        displayName:
+          type: string
+        description:
+          type: string
+        avatar:
+          type: string
+        banner:
+          type: string
+        followsCount:
+          type: integer
+        followersCount:
+          type: integer
+        postsCount:
+          type: integer
+        associated:
+          type: object
+        indexedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+
+    ActorPreferences:
+      type: object
+      properties:
+        preferences:
+          type: array
+          items:
+            type: object
+
+    PostView:
+      type: object
+      properties:
+        uri:
+          type: string
+        cid:
+          type: string
+        author:
+          $ref: '#/components/schemas/ActorProfile'
+        record:
+          $ref: '#/components/schemas/PostRecord'
+        embed:
+          $ref: '#/components/schemas/EmbedView'
+        replyCount:
+          type: integer
+        repostCount:
+          type: integer
+        likeCount:
+          type: integer
+        quoteCount:
+          type: integer
+        indexedAt:
+          type: string
+          format: date-time
+        viewer:
+          $ref: '#/components/schemas/ViewerState'
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        threadgate:
+          $ref: '#/components/schemas/ThreadgateView'
+
+    PostRecord:
+      type: object
+      properties:
+        text:
+          type: string
+        facets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Facet'
+        reply:
+          $ref: '#/components/schemas/ReplyRef'
+        embed:
+          $ref: '#/components/schemas/EmbedRecord'
+        langs:
+          type: array
+          items:
+            type: string
+        labels:
+          $ref: '#/components/schemas/SelfLabels'
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    FeedViewPost:
+      type: object
+      properties:
+        post:
+          $ref: '#/components/schemas/PostView'
+        reply:
+          type: object
+          properties:
+            root:
+              $ref: '#/components/schemas/PostView'
+            parent:
+              $ref: '#/components/schemas/PostView'
+            grandparentAuthor:
+              $ref: '#/components/schemas/ActorProfile'
+        reason:
+          $ref: '#/components/schemas/ReasonRepost'
+        feedContext:
+          type: string
+
+    ThreadViewPost:
+      type: object
+      properties:
+        post:
+          $ref: '#/components/schemas/PostView'
+        parent:
+          $ref: '#/components/schemas/ThreadViewPost'
+        replies:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThreadViewPost'
+
+    Notification:
+      type: object
+      properties:
+        uri:
+          type: string
+        cid:
+          type: string
+        author:
+          $ref: '#/components/schemas/ActorProfile'
+        reason:
+          type: string
+          enum: [like, repost, follow, mention, reply, quote, starterpack-joined]
+        reasonSubject:
+          type: string
+        record:
+          type: object
+        isRead:
+          type: boolean
+        indexedAt:
+          type: string
+          format: date-time
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+
+    ConvoView:
+      type: object
+      properties:
+        id:
+          type: string
+        rev:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatActor'
+        lastMessage:
+          $ref: '#/components/schemas/MessageView'
+        muted:
+          type: boolean
+        unreadCount:
+          type: integer
+
+    MessageView:
+      type: object
+      properties:
+        id:
+          type: string
+        rev:
+          type: string
+        text:
+          type: string
+        facets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Facet'
+        embed:
+          $ref: '#/components/schemas/EmbedView'
+        sender:
+          $ref: '#/components/schemas/ChatActor'
+        sentAt:
+          type: string
+          format: date-time
+
+    ChatActor:
+      type: object
+      properties:
+        did:
+          type: string
+        handle:
+          type: string
+        displayName:
+          type: string
+        avatar:
+          type: string
+        associated:
+          type: object
+        viewer:
+          type: object
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        chatDisabled:
+          type: boolean
+
+    Facet:
+      type: object
+      properties:
+        index:
+          type: object
+          properties:
+            byteStart:
+              type: integer
+            byteEnd:
+              type: integer
+        features:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/FacetMention'
+              - $ref: '#/components/schemas/FacetLink'
+              - $ref: '#/components/schemas/FacetTag'
+
+    FacetMention:
+      type: object
+      properties:
+        '$type':
+          type: string
+          enum: [app.bsky.richtext.facet#mention]
+        did:
+          type: string
+
+    FacetLink:
+      type: object
+      properties:
+        '$type':
+          type: string
+          enum: [app.bsky.richtext.facet#link]
+        uri:
+          type: string
+
+    FacetTag:
+      type: object
+      properties:
+        '$type':
+          type: string
+          enum: [app.bsky.richtext.facet#tag]
+        tag:
+          type: string
+
+    EmbedView:
+      oneOf:
+        - $ref: '#/components/schemas/EmbedImagesView'
+        - $ref: '#/components/schemas/EmbedExternalView'
+        - $ref: '#/components/schemas/EmbedRecordView'
+        - $ref: '#/components/schemas/EmbedRecordWithMediaView'
+
+    EmbedImagesView:
+      type: object
+      properties:
+        '$type':
+          type: string
+          enum: [app.bsky.embed.images#view]
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              thumb:
+                type: string
+              fullsize:
+                type: string
+              alt:
+                type: string
+              aspectRatio:
+                type: object
+                properties:
+                  width:
+                    type: integer
+                  height:
+                    type: integer
+
+    EmbedExternalView:
+      type: object
+      properties:
+        '$type':
+          type: string
+          enum: [app.bsky.embed.external#view]
+        external:
+          type: object
+          properties:
+            uri:
+              type: string
+            title:
+              type: string
+            description:
+              type: string
+            thumb:
+              type: string
+
+    EmbedRecordView:
+      type: object
+      properties:
+        '$type':
+          type: string
+          enum: [app.bsky.embed.record#view]
+        record:
+          oneOf:
+            - $ref: '#/components/schemas/PostView'
+            - type: object
+              properties:
+                '$type':
+                  type: string
+                  enum: [app.bsky.embed.record#viewNotFound, app.bsky.embed.record#viewBlocked, app.bsky.embed.record#viewDetached]
+
+    EmbedRecordWithMediaView:
+      type: object
+      properties:
+        '$type':
+          type: string
+          enum: [app.bsky.embed.recordWithMedia#view]
+        record:
+          $ref: '#/components/schemas/EmbedRecordView'
+        media:
+          oneOf:
+            - $ref: '#/components/schemas/EmbedImagesView'
+            - $ref: '#/components/schemas/EmbedExternalView'
+
+    EmbedRecord:
+      oneOf:
+        - $ref: '#/components/schemas/EmbedImages'
+        - $ref: '#/components/schemas/EmbedExternal'
+        - $ref: '#/components/schemas/EmbedRecord'
+
+    EmbedImages:
+      type: object
+      properties:
+        '$type':
+          type: string
+          enum: [app.bsky.embed.images]
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              image:
+                type: object
+                properties:
+                  '$type':
+                    type: string
+                    enum: [blob]
+                  ref:
+                    type: object
+                  mimeType:
+                    type: string
+                  size:
+                    type: integer
+              alt:
+                type: string
+              aspectRatio:
+                type: object
+                properties:
+                  width:
+                    type: integer
+                  height:
+                    type: integer
+
+    EmbedExternal:
+      type: object
+      properties:
+        '$type':
+          type: string
+          enum: [app.bsky.embed.external]
+        external:
+          type: object
+          properties:
+            uri:
+              type: string
+            title:
+              type: string
+            description:
+              type: string
+            thumb:
+              type: object
+              properties:
+                '$type':
+                  type: string
+                  enum: [blob]
+                ref:
+                  type: object
+                mimeType:
+                  type: string
+                size:
+                  type: integer
+
+    ReplyRef:
+      type: object
+      properties:
+        root:
+          type: object
+          properties:
+            uri:
+              type: string
+            cid:
+              type: string
+        parent:
+          type: object
+          properties:
+            uri:
+              type: string
+            cid:
+              type: string
+
+    ReasonRepost:
+      type: object
+      properties:
+        '$type':
+          type: string
+          enum: [app.bsky.feed.defs#reasonRepost]
+        by:
+          $ref: '#/components/schemas/ActorProfile'
+        indexedAt:
+          type: string
+          format: date-time
+
+    ViewerState:
+      type: object
+      properties:
+        repost:
+          type: string
+        like:
+          type: string
+        threadMuted:
+          type: boolean
+        replyDisabled:
+          type: boolean
+        embeddingDisabled:
+          type: boolean
+        pinned:
+          type: boolean
+
+    ThreadgateView:
+      type: object
+      properties:
+        uri:
+          type: string
+        cid:
+          type: string
+        record:
+          type: object
+        lists:
+          type: array
+          items:
+            type: object
+
+    Label:
+      type: object
+      properties:
+        src:
+          type: string
+        uri:
+          type: string
+        cid:
+          type: string
+        val:
+          type: string
+        neg:
+          type: boolean
+        cts:
+          type: string
+          format: date-time
+        exp:
+          type: string
+          format: date-time
+        sig:
+          type: string
+
+    SelfLabels:
+      type: object
+      properties:
+        '$type':
+          type: string
+          enum: [com.atproto.label.defs#selfLabels]
+        values:
+          type: array
+          items:
+            type: object
+            properties:
+              val:
+                type: string
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Actor
+    description: User profiles and actor management
+  - name: Feed
+    description: Posts, timeline, and content feeds
+  - name: Graph
+    description: Social graph, follows, blocks, and lists
+  - name: Notifications
+    description: Notification management
+  - name: Chat
+    description: Direct messages and conversations
+  - name: Repository
+    description: AT Protocol repository management
+  - name: Authentication
+    description: Session and authentication management

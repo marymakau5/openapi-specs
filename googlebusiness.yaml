@@ -1,0 +1,2066 @@
+openapi: 3.0.3
+info:
+  title: Google Business Profile API
+  description: |
+    The Google Business Profile API (formerly Google My Business API) provides programmatic 
+    access to manage business location information on Google. This comprehensive API enables 
+    businesses and developers to:
+    
+    **Core Features:**
+    - **Accounts**: Manage business accounts and admin permissions  
+    - **Locations**: Create, update, and manage business locations
+    - **Posts**: Create and manage local posts for business promotion
+    - **Media**: Upload and manage photos and videos
+    - **Reviews**: Manage customer reviews and responses
+    - **Q&A**: Handle questions and answers from customers
+    - **Verification**: Verify business location ownership
+    - **Insights**: Access performance analytics and reporting
+    - **Attributes**: Manage location-specific business attributes
+    - **Categories**: Access business category information
+    
+    **Authentication:** OAuth 2.0 with Google Account
+    **Base URL:** https://mybusiness.googleapis.com
+  version: "4.0"
+  contact:
+    name: Google Business Profile API
+    url: https://developers.google.com/my-business
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+  - url: https://mybusiness.googleapis.com
+    description: Google Business Profile API
+
+paths:
+  # Accounts Management
+  /v4/accounts:
+    get:
+      tags: [Accounts]
+      summary: List accounts
+      description: Lists all accounts for the authenticated user
+      parameters:
+        - name: pageSize
+          in: query
+          description: Number of accounts to return per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: pageToken
+          in: query
+          description: Token for pagination
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: A filter constraining the accounts returned
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of accounts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAccountsResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+    post:
+      tags: [Accounts]
+      summary: Create account
+      description: Creates a new business account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account'
+            example:
+              accountName: "My Business Account"
+              type: "BUSINESS"
+              role: "OWNER"
+      responses:
+        '200':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  /v4/{name}:
+    get:
+      tags: [Accounts]
+      summary: Get account
+      description: Gets the specified account
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Account resource name
+          schema:
+            type: string
+            example: "accounts/123456789"
+      responses:
+        '200':
+          description: Account retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          description: Account not found
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+    put:
+      tags: [Accounts]
+      summary: Update account
+      description: Updates the specified business account
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Account resource name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account'
+      responses:
+        '200':
+          description: Account updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Invalid request
+        '404':
+          description: Account not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  # Locations Management
+  /v4/{parent}/locations:
+    get:
+      tags: [Locations]
+      summary: List locations
+      description: Lists locations for the specified account
+      parameters:
+        - name: parent
+          in: path
+          required: true
+          description: Parent account resource name
+          schema:
+            type: string
+            example: "accounts/123456789"
+        - name: pageSize
+          in: query
+          description: Number of locations to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: pageToken
+          in: query
+          description: Token for pagination
+          schema:
+            type: string
+        - name: filter
+          in: query
+          description: Filter for location attributes
+          schema:
+            type: string
+        - name: orderBy
+          in: query
+          description: Sort order for locations
+          schema:
+            type: string
+        - name: languageCode
+          in: query
+          description: Language code for localized content
+          schema:
+            type: string
+            example: "en-US"
+      responses:
+        '200':
+          description: Locations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListLocationsResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Account not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+    post:
+      tags: [Locations]
+      summary: Create location
+      description: Creates a new location for the specified account
+      parameters:
+        - name: parent
+          in: path
+          required: true
+          description: Parent account resource name
+          schema:
+            type: string
+        - name: requestId
+          in: query
+          description: Unique request identifier
+          schema:
+            type: string
+        - name: validateOnly
+          in: query
+          description: Validate request without creating location
+          schema:
+            type: boolean
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Location'
+            example:
+              locationName: "My Business Location"
+              primaryCategory:
+                categoryId: "gcid:restaurant"
+              address:
+                regionCode: "US"
+                languageCode: "en"
+                postalCode: "90210"
+                administrativeArea: "CA"
+                locality: "Beverly Hills"
+                addressLines: ["123 Main St"]
+              primaryPhone: "+1-555-123-4567"
+              websiteUri: "https://www.mybusiness.com"
+              regularHours:
+                periods:
+                  - openDay: "MONDAY"
+                    openTime: "09:00"
+                    closeDay: "MONDAY"  
+                    closeTime: "17:00"
+      responses:
+        '200':
+          description: Location created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  /v4/{name}/locations/{locationId}:
+    get:
+      tags: [Locations]
+      summary: Get location
+      description: Gets the specified location
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Account resource name
+          schema:
+            type: string
+        - name: locationId
+          in: path
+          required: true
+          description: Location ID
+          schema:
+            type: string
+        - name: readMask
+          in: query
+          description: Fields to include in response
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Location retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '404':
+          description: Location not found
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+    patch:
+      tags: [Locations]
+      summary: Update location
+      description: Updates the specified location
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Account resource name
+          schema:
+            type: string
+        - name: locationId
+          in: path
+          required: true
+          description: Location ID
+          schema:
+            type: string
+        - name: updateMask
+          in: query
+          description: Fields to update
+          schema:
+            type: string
+        - name: validateOnly
+          in: query
+          description: Validate request without updating
+          schema:
+            type: boolean
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Location'
+      responses:
+        '200':
+          description: Location updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          description: Invalid request
+        '404':
+          description: Location not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+    delete:
+      tags: [Locations]
+      summary: Delete location
+      description: Deletes the specified location
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Account resource name
+          schema:
+            type: string
+        - name: locationId
+          in: path
+          required: true
+          description: Location ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Location deleted successfully
+        '404':
+          description: Location not found
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  # Local Posts
+  /v4/{parent}/localPosts:
+    get:
+      tags: [Local Posts]
+      summary: List local posts
+      description: Returns a list of local posts associated with a location
+      parameters:
+        - name: parent
+          in: path
+          required: true
+          description: Parent location resource name
+          schema:
+            type: string
+            example: "accounts/123456789/locations/987654321"
+        - name: pageSize
+          in: query
+          description: Number of posts to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: pageToken
+          in: query
+          description: Token for pagination
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Local posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListLocalPostsResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Location not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+    post:
+      tags: [Local Posts]
+      summary: Create local post
+      description: Creates a new local post for the specified location
+      parameters:
+        - name: parent
+          in: path
+          required: true
+          description: Parent location resource name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocalPost'
+            examples:
+              text_post:
+                summary: Text-only post
+                value:
+                  languageCode: "en-US"
+                  summary: "New menu items available!"
+                  event:
+                    title: "Special Promotion"
+                    schedule:
+                      startDate:
+                        year: 2026
+                        month: 2
+                        day: 15
+                      endDate:
+                        year: 2026
+                        month: 2
+                        day: 28
+              offer_post:
+                summary: Offer post
+                value:
+                  languageCode: "en-US"
+                  summary: "20% off all items this weekend!"
+                  offer:
+                    offerType: "OFFER"
+                    redeemOnlineUrl: "https://mybusiness.com/offer"
+                    termsConditions: "Valid through Sunday. Cannot be combined with other offers."
+                    couponCode: "SAVE20"
+      responses:
+        '200':
+          description: Local post created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalPost'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  /v4/{name}:
+    get:
+      tags: [Local Posts]
+      summary: Get local post
+      description: Gets the specified local post
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Local post resource name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Local post retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalPost'
+        '404':
+          description: Local post not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+    patch:
+      tags: [Local Posts]
+      summary: Update local post
+      description: Updates the specified local post
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Local post resource name
+          schema:
+            type: string
+        - name: updateMask
+          in: query
+          description: Fields to update
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocalPost'
+      responses:
+        '200':
+          description: Local post updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalPost'
+        '400':
+          description: Invalid request
+        '404':
+          description: Local post not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+    delete:
+      tags: [Local Posts]
+      summary: Delete local post
+      description: Deletes the specified local post
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Local post resource name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Local post deleted successfully
+        '404':
+          description: Local post not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  # Media Management
+  /v4/{parent}/media:
+    get:
+      tags: [Media]
+      summary: List media
+      description: Returns a list of media items associated with a location
+      parameters:
+        - name: parent
+          in: path
+          required: true
+          description: Parent location resource name
+          schema:
+            type: string
+        - name: pageSize
+          in: query
+          description: Number of media items to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: pageToken
+          in: query
+          description: Token for pagination
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Media items retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListMediaItemsResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Location not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+    post:
+      tags: [Media]
+      summary: Create media item
+      description: Creates a new media item for the location
+      parameters:
+        - name: parent
+          in: path
+          required: true
+          description: Parent location resource name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaItem'
+            example:
+              locationAssociation:
+                category: "ADDITIONAL"
+              mediaFormat: "PHOTO"
+              sourceUrl: "https://example.com/photo.jpg"
+              description: "Interior view of our restaurant"
+              attribution:
+                authorName: "Business Owner"
+      responses:
+        '200':
+          description: Media item created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaItem'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  /v4/{parent}/media:startUpload:
+    post:
+      tags: [Media]
+      summary: Start media upload
+      description: Generates a MediaItemDataRef for media item uploading
+      parameters:
+        - name: parent
+          in: path
+          required: true
+          description: Parent location resource name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Upload reference generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaItemDataRef'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  # Reviews Management
+  /v4/{parent}/reviews:
+    get:
+      tags: [Reviews]
+      summary: List reviews
+      description: Returns paginated list of reviews for the specified location
+      parameters:
+        - name: parent
+          in: path
+          required: true
+          description: Parent location resource name
+          schema:
+            type: string
+        - name: pageSize
+          in: query
+          description: Number of reviews to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: pageToken
+          in: query
+          description: Token for pagination
+          schema:
+            type: string
+        - name: orderBy
+          in: query
+          description: Sort order for reviews
+          schema:
+            type: string
+            enum: [rating, updateTime]
+      responses:
+        '200':
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListReviewsResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Location not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  /v4/{name}/reply:
+    put:
+      tags: [Reviews]
+      summary: Update review reply
+      description: Updates the reply to the specified review
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Review resource name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reply'
+            example:
+              comment: "Thank you for your feedback! We appreciate your business and will use your suggestions to improve."
+              updateTime: "2026-02-02T15:30:00Z"
+      responses:
+        '200':
+          description: Review reply updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reply'
+        '400':
+          description: Invalid request
+        '404':
+          description: Review not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+    delete:
+      tags: [Reviews]
+      summary: Delete review reply
+      description: Deletes the response to the specified review
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Review resource name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Review reply deleted successfully
+        '404':
+          description: Review not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  # Questions and Answers
+  /v4/{parent}/questions:
+    get:
+      tags: [Q&A]
+      summary: List questions
+      description: Returns paginated list of questions for a specified location
+      parameters:
+        - name: parent
+          in: path
+          required: true
+          description: Parent location resource name
+          schema:
+            type: string
+        - name: pageSize
+          in: query
+          description: Number of questions to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: pageToken
+          in: query
+          description: Token for pagination
+          schema:
+            type: string
+        - name: answersPerQuestion
+          in: query
+          description: Number of answers to include per question
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10
+            default: 0
+        - name: filter
+          in: query
+          description: Filter for questions
+          schema:
+            type: string
+        - name: orderBy
+          in: query
+          description: Sort order for questions
+          schema:
+            type: string
+            enum: [updateTime]
+      responses:
+        '200':
+          description: Questions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListQuestionsResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Location not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+    post:
+      tags: [Q&A]
+      summary: Create question
+      description: Adds a question for the specified location
+      parameters:
+        - name: parent
+          in: path
+          required: true
+          description: Parent location resource name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Question'
+            example:
+              text: "What are your hours of operation on weekends?"
+              author:
+                displayName: "Customer"
+                type: "REGULAR_USER"
+      responses:
+        '200':
+          description: Question created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  /v4/{parent}/answers:upsert:
+    post:
+      tags: [Q&A]
+      summary: Upsert answer
+      description: Creates an answer or updates the existing answer for a question
+      parameters:
+        - name: parent
+          in: path
+          required: true
+          description: Parent question resource name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Answer'
+            example:
+              text: "We are open Saturday 10am-8pm and Sunday 11am-6pm."
+              author:
+                displayName: "Business Owner"
+                type: "MERCHANT"
+      responses:
+        '200':
+          description: Answer created or updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Answer'
+        '400':
+          description: Invalid request
+        '404':
+          description: Question not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  # Insights and Analytics
+  /v4/{name}/locations:reportInsights:
+    post:
+      tags: [Insights]
+      summary: Report location insights
+      description: Returns insights for one or more metrics by location
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Account resource name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportInsightsRequest'
+            example:
+              locationNames:
+                - "accounts/123456789/locations/987654321"
+              basicRequest:
+                metricRequests:
+                  - metric: "QUERIES_DIRECT"
+                  options: ["AGGREGATION_METHOD_DAILY_VALUES"]
+                  - metric: "QUERIES_INDIRECT"
+                  - metric: "VIEWS_MAPS"
+                  - metric: "VIEWS_SEARCH"
+                  - metric: "ACTIONS_WEBSITE"
+                  - metric: "ACTIONS_PHONE"
+                timeRange:
+                  startTime: "2026-01-01T00:00:00Z"
+                  endTime: "2026-01-31T23:59:59Z"
+      responses:
+        '200':
+          description: Insights retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportInsightsResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  # Business Categories
+  /v4/categories:
+    get:
+      tags: [Categories]
+      summary: List business categories
+      description: Returns a list of business categories
+      parameters:
+        - name: languageCode
+          in: query
+          description: Language code for category names
+          schema:
+            type: string
+            default: "en-US"
+        - name: regionCode
+          in: query
+          description: Region code for relevant categories
+          schema:
+            type: string
+            default: "US"
+        - name: view
+          in: query
+          description: Specifies which parts to include
+          schema:
+            type: string
+            enum: [CATEGORY_VIEW_UNSPECIFIED, BASIC, FULL]
+            default: BASIC
+        - name: filter
+          in: query
+          description: Filter to apply to categories
+          schema:
+            type: string
+        - name: pageSize
+          in: query
+          description: Number of categories to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: pageToken
+          in: query
+          description: Token for pagination
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListCategoriesResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  # Verification
+  /v4/{name}:verify:
+    post:
+      tags: [Verification]
+      summary: Verify location
+      description: Starts the verification process for a location
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Location resource name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyLocationRequest'
+            example:
+              verificationMethod: "MAIL"
+              languageCode: "en-US"
+              mailerContact:
+                contactName: "John Smith"
+                phoneNumber: "+1-555-123-4567"
+      responses:
+        '200':
+          description: Verification process started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyLocationResponse'
+        '400':
+          description: Invalid request
+        '404':
+          description: Location not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+  /v4/{name}:fetchVerificationOptions:
+    post:
+      tags: [Verification]
+      summary: Fetch verification options
+      description: Reports all eligible verification options for a location
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Location resource name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                languageCode:
+                  type: string
+                  description: Language code for verification options
+                  example: "en-US"
+              required: [languageCode]
+      responses:
+        '200':
+          description: Verification options retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FetchVerificationOptionsResponse'
+        '400':
+          description: Invalid request
+        '404':
+          description: Location not found
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://accounts.google.com/o/oauth2/auth
+          tokenUrl: https://oauth2.googleapis.com/token
+          scopes:
+            https://www.googleapis.com/auth/business.manage: Full management of Business Profile listings
+
+  schemas:
+    # Account Management
+    Account:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Resource name of the account
+          example: "accounts/123456789"
+        accountName:
+          type: string
+          description: Human-readable name of the account
+          example: "My Business Account"
+        type:
+          type: string
+          enum: [BUSINESS, PERSONAL]
+          description: Type of the account
+        role:
+          type: string
+          enum: [OWNER, CO_OWNER, MANAGER, COMMUNICATIONS_MANAGER, SITE_MANAGER]
+          description: User's role for the account
+        state:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [UNVERIFIED, VERIFIED, SUSPENDED, DISABLED]
+              description: Account status
+        profilePhotoUrl:
+          type: string
+          format: uri
+          description: URL of the account profile photo
+        accountNumber:
+          type: string
+          description: Account number for the business
+
+    ListAccountsResponse:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+        nextPageToken:
+          type: string
+          description: Token for retrieving next page
+
+    # Location Management
+    Location:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Resource name of the location
+          example: "accounts/123456789/locations/987654321"
+        locationName:
+          type: string
+          description: Google identifier for the location
+        primaryCategory:
+          $ref: '#/components/schemas/Category'
+        additionalCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+          description: Additional business categories
+        phoneNumbers:
+          $ref: '#/components/schemas/PhoneNumbers'
+        address:
+          $ref: '#/components/schemas/PostalAddress'
+        primaryPhone:
+          type: string
+          description: Primary phone number
+          example: "+1-555-123-4567"
+        additionalPhones:
+          type: array
+          items:
+            type: string
+          description: Additional phone numbers
+        websiteUri:
+          type: string
+          format: uri
+          description: Business website URL
+        regularHours:
+          $ref: '#/components/schemas/BusinessHours'
+        specialHours:
+          $ref: '#/components/schemas/SpecialHours'
+        serviceArea:
+          $ref: '#/components/schemas/ServiceAreaBusiness'
+        locationKey:
+          $ref: '#/components/schemas/LocationKey'
+        labels:
+          type: array
+          items:
+            type: string
+          description: Custom labels for the location
+        adWordsLocationExtensions:
+          $ref: '#/components/schemas/AdWordsLocationExtensions'
+        latlng:
+          $ref: '#/components/schemas/LatLng'
+        openInfo:
+          $ref: '#/components/schemas/OpenInfo'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+
+    Category:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          description: Category identifier
+          example: "gcid:restaurant"
+        displayName:
+          type: string
+          description: Human-readable category name
+
+    PostalAddress:
+      type: object
+      properties:
+        regionCode:
+          type: string
+          description: Country code
+          example: "US"
+        languageCode:
+          type: string
+          description: Language code
+          example: "en"
+        postalCode:
+          type: string
+          description: Postal/ZIP code
+          example: "90210"
+        sortingCode:
+          type: string
+          description: Sorting code for mail
+        administrativeArea:
+          type: string
+          description: State or province
+          example: "CA"
+        locality:
+          type: string
+          description: City or locality
+          example: "Beverly Hills"
+        sublocality:
+          type: string
+          description: Sublocality or district
+        addressLines:
+          type: array
+          items:
+            type: string
+          description: Street address lines
+          example: ["123 Main St", "Suite 100"]
+        recipients:
+          type: array
+          items:
+            type: string
+          description: Recipients for mail delivery
+        organization:
+          type: string
+          description: Organization name
+
+    BusinessHours:
+      type: object
+      properties:
+        periods:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimePeriod'
+          description: Regular business hours
+
+    TimePeriod:
+      type: object
+      properties:
+        openDay:
+          type: string
+          enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+          description: Day of the week when period starts
+        openTime:
+          type: string
+          description: Opening time (24-hour format)
+          pattern: "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+          example: "09:00"
+        closeDay:
+          type: string
+          enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+          description: Day of the week when period ends
+        closeTime:
+          type: string
+          description: Closing time (24-hour format)
+          pattern: "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+          example: "17:00"
+
+    SpecialHours:
+      type: object
+      properties:
+        specialHourPeriods:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecialHourPeriod'
+          description: Special hours periods
+
+    SpecialHourPeriod:
+      type: object
+      properties:
+        startDate:
+          $ref: '#/components/schemas/Date'
+        endDate:
+          $ref: '#/components/schemas/Date'
+        openTime:
+          type: string
+          description: Opening time
+        closeTime:
+          type: string
+          description: Closing time
+        closed:
+          type: boolean
+          description: Whether the business is closed during this period
+
+    Date:
+      type: object
+      properties:
+        year:
+          type: integer
+          description: Year
+          example: 2026
+        month:
+          type: integer
+          description: Month (1-12)
+          example: 2
+        day:
+          type: integer
+          description: Day of month
+          example: 15
+
+    LatLng:
+      type: object
+      properties:
+        latitude:
+          type: number
+          description: Latitude coordinate
+          example: 34.0522
+        longitude:
+          type: number
+          description: Longitude coordinate
+          example: -118.2437
+
+    # Local Posts
+    LocalPost:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Resource name of the local post
+        languageCode:
+          type: string
+          description: Language code
+          example: "en-US"
+        summary:
+          type: string
+          description: Summary text of the post
+        callToAction:
+          $ref: '#/components/schemas/CallToAction'
+        createTime:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updateTime:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        event:
+          $ref: '#/components/schemas/LocalPostEvent'
+        offer:
+          $ref: '#/components/schemas/LocalPostOffer'
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaItem'
+          description: Media items attached to the post
+        topicType:
+          type: string
+          enum: [EVENT, OFFER, ALERT]
+          description: Type of local post
+        alertType:
+          type: string
+          enum: [ALERT_TYPE_UNSPECIFIED, TEMPORARY_CLOSURE, 
+                 REOPENING, MODIFIED_HOURS, OWNER_VERIFICATION_REQUIRED,
+                 HOLIDAY_CLOSURE, WEATHER_CLOSURE, OTHER_CLOSURE,
+                 PHONE_OUT_OF_ORDER]
+          description: Alert type for alert posts
+        state:
+          type: string
+          enum: [PENDING, LIVE, EXPIRED, REJECTED]
+          description: State of the local post
+
+    LocalPostEvent:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Event title
+        schedule:
+          $ref: '#/components/schemas/LocalPostSchedule'
+
+    LocalPostOffer:
+      type: object
+      properties:
+        offerType:
+          type: string
+          enum: [OFFER_TYPE_UNSPECIFIED, OFFER, BUY_ONE_GET_ONE]
+          description: Type of offer
+        redeemOnlineUrl:
+          type: string
+          format: uri
+          description: URL for online redemption
+        termsConditions:
+          type: string
+          description: Terms and conditions
+        couponCode:
+          type: string
+          description: Coupon code
+
+    LocalPostSchedule:
+      type: object
+      properties:
+        startDate:
+          $ref: '#/components/schemas/Date'
+        startTime:
+          $ref: '#/components/schemas/TimeOfDay'
+        endDate:
+          $ref: '#/components/schemas/Date'
+        endTime:
+          $ref: '#/components/schemas/TimeOfDay'
+
+    TimeOfDay:
+      type: object
+      properties:
+        hours:
+          type: integer
+          minimum: 0
+          maximum: 23
+        minutes:
+          type: integer
+          minimum: 0
+          maximum: 59
+        seconds:
+          type: integer
+          minimum: 0
+          maximum: 59
+        nanos:
+          type: integer
+          minimum: 0
+          maximum: 999999999
+
+    CallToAction:
+      type: object
+      properties:
+        actionType:
+          type: string
+          enum: [BOOK, ORDER, SHOP, LEARN_MORE, SIGN_UP, CALL]
+          description: Type of action
+        url:
+          type: string
+          format: uri
+          description: Action URL
+
+    # Media
+    MediaItem:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Resource name of the media item
+        mediaFormat:
+          type: string
+          enum: [PHOTO, VIDEO]
+          description: Format of the media
+        sourceUrl:
+          type: string
+          format: uri
+          description: Source URL of the media
+        thumbnailUrl:
+          type: string
+          format: uri
+          description: Thumbnail URL
+        googleUrl:
+          type: string
+          format: uri
+          description: Google-hosted URL
+          readOnly: true
+        description:
+          type: string
+          description: Description of the media
+        createTime:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        attribution:
+          $ref: '#/components/schemas/Attribution'
+        locationAssociation:
+          $ref: '#/components/schemas/LocationAssociation'
+        dimensions:
+          $ref: '#/components/schemas/Dimensions'
+
+    Attribution:
+      type: object
+      properties:
+        profileName:
+          type: string
+          description: Profile name of the contributor
+        profilePhotoUrl:
+          type: string
+          format: uri
+          description: Profile photo URL
+        profileUrl:
+          type: string
+          format: uri
+          description: Profile URL
+        takedownUrl:
+          type: string
+          format: uri
+          description: Takedown URL
+
+    LocationAssociation:
+      type: object
+      properties:
+        category:
+          type: string
+          enum: [CATEGORY_UNSPECIFIED, COVER, PROFILE, LOGO, EXTERIOR, INTERIOR, PRODUCT, FOOD_AND_DRINK, MENU, COMMON_AREA, ROOMS, TEAMS, AT_WORK, ADDITIONAL]
+          description: Category of media association
+
+    Dimensions:
+      type: object
+      properties:
+        widthPixels:
+          type: integer
+          description: Width in pixels
+        heightPixels:
+          type: integer
+          description: Height in pixels
+
+    MediaItemDataRef:
+      type: object
+      properties:
+        resourceName:
+          type: string
+          description: Resource name for upload
+
+    # Reviews
+    Review:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Resource name of the review
+        reviewId:
+          type: string
+          description: Unique review identifier
+        reviewer:
+          $ref: '#/components/schemas/Reviewer'
+        starRating:
+          type: string
+          enum: [ONE, TWO, THREE, FOUR, FIVE]
+          description: Star rating
+        comment:
+          type: string
+          description: Review comment text
+        createTime:
+          type: string
+          format: date-time
+          description: Review creation time
+        updateTime:
+          type: string
+          format: date-time
+          description: Last update time
+        reviewReply:
+          $ref: '#/components/schemas/Reply'
+
+    Reviewer:
+      type: object
+      properties:
+        profilePhotoUrl:
+          type: string
+          format: uri
+          description: Profile photo URL
+        displayName:
+          type: string
+          description: Display name
+        isAnonymous:
+          type: boolean
+          description: Whether reviewer is anonymous
+
+    Reply:
+      type: object
+      properties:
+        comment:
+          type: string
+          description: Reply comment text
+        updateTime:
+          type: string
+          format: date-time
+          description: Reply update time
+
+    # Questions and Answers
+    Question:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Resource name of the question
+        author:
+          $ref: '#/components/schemas/Author'
+        upvoteCount:
+          type: integer
+          description: Number of upvotes
+        text:
+          type: string
+          description: Question text
+        createTime:
+          type: string
+          format: date-time
+          description: Creation time
+        updateTime:
+          type: string
+          format: date-time
+          description: Last update time
+        topAnswers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Answer'
+          description: Top answers for the question
+        totalAnswerCount:
+          type: integer
+          description: Total number of answers
+
+    Answer:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Resource name of the answer
+        author:
+          $ref: '#/components/schemas/Author'
+        upvoteCount:
+          type: integer
+          description: Number of upvotes
+        text:
+          type: string
+          description: Answer text
+        createTime:
+          type: string
+          format: date-time
+          description: Creation time
+        updateTime:
+          type: string
+          format: date-time
+          description: Last update time
+
+    Author:
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: Display name
+        profilePhotoUrl:
+          type: string
+          format: uri
+          description: Profile photo URL
+        type:
+          type: string
+          enum: [REGULAR_USER, LOCAL_GUIDE, MERCHANT]
+          description: Type of author
+
+    # Insights and Analytics
+    ReportInsightsRequest:
+      type: object
+      properties:
+        locationNames:
+          type: array
+          items:
+            type: string
+          description: Location resource names for insights
+        basicRequest:
+          $ref: '#/components/schemas/BasicMetricsRequest'
+        drivingDirectionsRequest:
+          $ref: '#/components/schemas/DrivingDirectionMetricsRequest'
+
+    BasicMetricsRequest:
+      type: object
+      properties:
+        metricRequests:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricRequest'
+        timeRange:
+          $ref: '#/components/schemas/TimeRange'
+
+    MetricRequest:
+      type: object
+      properties:
+        metric:
+          type: string
+          enum: [
+            QUERIES_DIRECT, QUERIES_INDIRECT, QUERIES_CHAIN, VIEWS_MAPS, VIEWS_SEARCH, 
+            ACTIONS_WEBSITE, ACTIONS_PHONE, ACTIONS_DRIVING_DIRECTIONS, PHOTOS_VIEWS_MERCHANT,
+            PHOTOS_VIEWS_CUSTOMERS, PHOTOS_COUNT_MERCHANT, PHOTOS_COUNT_CUSTOMERS, LOCAL_POST_VIEWS_SEARCH
+          ]
+          description: Metric to request
+        options:
+          type: array
+          items:
+            type: string
+            enum: [AGGREGATION_METHOD_DAILY_VALUES, AGGREGATION_METHOD_TOTAL]
+          description: Options for the metric
+
+    TimeRange:
+      type: object
+      properties:
+        startTime:
+          type: string
+          format: date-time
+          description: Start time for the range
+        endTime:
+          type: string
+          format: date-time
+          description: End time for the range
+
+    ReportInsightsResponse:
+      type: object
+      properties:
+        locationMetrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationMetrics'
+          description: Metrics by location
+        locationDrivingDirectionMetrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationDrivingDirectionMetrics'
+          description: Driving direction metrics by location
+
+    LocationMetrics:
+      type: object
+      properties:
+        locationName:
+          type: string
+          description: Location resource name
+        timeZone:
+          type: string
+          description: Location time zone
+        metricValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricValue'
+          description: Metric values for the location
+
+    MetricValue:
+      type: object
+      properties:
+        metric:
+          type: string
+          description: Metric name
+        totalValue:
+          $ref: '#/components/schemas/DimensionalMetricValue'
+        dimensionalValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/DimensionalMetricValue'
+          description: Dimensional breakdown of metric values
+
+    DimensionalMetricValue:
+      type: object
+      properties:
+        metricOption:
+          type: string
+          description: Metric option
+        value:
+          type: string
+          description: Metric value
+        timeDimension:
+          $ref: '#/components/schemas/TimeDimension'
+
+    TimeDimension:
+      type: object
+      properties:
+        timeRange:
+          $ref: '#/components/schemas/TimeRange'
+        dayOfWeek:
+          type: string
+          enum: [DAY_OF_WEEK_UNSPECIFIED, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+        hourOfDay:
+          type: integer
+          minimum: 0
+          maximum: 23
+
+    # Verification
+    VerifyLocationRequest:
+      type: object
+      properties:
+        verificationMethod:
+          type: string
+          enum: [VERIFICATION_METHOD_UNSPECIFIED, ADDRESS, EMAIL, PHONE_CALL, SMS, AUTO, VETTED_PARTNER]
+          description: Verification method to use
+        languageCode:
+          type: string
+          description: Language code for verification
+          example: "en-US"
+        mailerContact:
+          type: object
+          properties:
+            contactName:
+              type: string
+              description: Contact name for mailed verification
+            phoneNumber:
+              type: string
+              description: Phone number for verification contact
+        context:
+          type: object
+          properties:
+            address:
+              $ref: '#/components/schemas/PostalAddress'
+            mapLocation:
+              $ref: '#/components/schemas/LatLng'
+
+    VerifyLocationResponse:
+      type: object
+      properties:
+        verification:
+          $ref: '#/components/schemas/Verification'
+
+    Verification:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Resource name of the verification
+        method:
+          type: string
+          enum: [VERIFICATION_METHOD_UNSPECIFIED, ADDRESS, EMAIL, PHONE_CALL, SMS, AUTO, VETTED_PARTNER]
+          description: Verification method used
+        state:
+          type: string
+          enum: [PENDING, COMPLETED, FAILED]
+          description: Current verification state
+        createTime:
+          type: string
+          format: date-time
+          description: Creation time
+
+    FetchVerificationOptionsResponse:
+      type: object
+      properties:
+        verificationOptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerificationOption'
+          description: Available verification options
+
+    VerificationOption:
+      type: object
+      properties:
+        verificationMethod:
+          type: string
+          enum: [VERIFICATION_METHOD_UNSPECIFIED, ADDRESS, EMAIL, PHONE_CALL, SMS, AUTO, VETTED_PARTNER]
+          description: Verification method
+        phoneNumber:
+          type: string
+          description: Phone number for SMS/call verification
+        address:
+          $ref: '#/components/schemas/PostalAddress'
+
+    # Common Response Objects
+    ListLocationsResponse:
+      type: object
+      properties:
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location'
+        nextPageToken:
+          type: string
+        totalSize:
+          type: integer
+
+    ListLocalPostsResponse:
+      type: object
+      properties:
+        localPosts:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalPost'
+        nextPageToken:
+          type: string
+
+    ListMediaItemsResponse:
+      type: object
+      properties:
+        mediaItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaItem'
+        nextPageToken:
+          type: string
+        totalMediaItemsCount:
+          type: integer
+
+    ListReviewsResponse:
+      type: object
+      properties:
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+        nextPageToken:
+          type: string
+        totalReviewCount:
+          type: integer
+        averageRating:
+          type: number
+          description: Average star rating
+
+    ListQuestionsResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+        nextPageToken:
+          type: string
+        totalSize:
+          type: integer
+
+    ListCategoriesResponse:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        nextPageToken:
+          type: string
+
+    # Additional Schemas
+    PhoneNumbers:
+      type: object
+      properties:
+        primaryPhone:
+          type: string
+          description: Primary phone number
+        additionalPhones:
+          type: array
+          items:
+            type: string
+          description: Additional phone numbers
+
+    ServiceAreaBusiness:
+      type: object
+      properties:
+        businessType:
+          type: string
+          enum: [CUSTOMER_LOCATION_ONLY, CUSTOMER_AND_BUSINESS_LOCATION]
+          description: Type of service area business
+        places:
+          type: object
+          properties:
+            placeInfos:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  placeId:
+                    type: string
+          description: Service area places
+
+    LocationKey:
+      type: object
+      properties:
+        placeId:
+          type: string
+          description: Google Place ID
+        plusPageId:
+          type: string
+          description: Google+ page ID
+        requestId:
+          type: string
+          description: Request identifier
+
+    AdWordsLocationExtensions:
+      type: object
+      properties:
+        adPhone:
+          type: string
+          description: Phone number for ads
+
+    OpenInfo:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [OPEN, CLOSED, SPECIAL_HOURS]
+          description: Current open status
+        canReopen:
+          type: boolean
+          description: Whether location can reopen
+        openingDate:
+          $ref: '#/components/schemas/Date'
+
+    Metadata:
+      type: object
+      properties:
+        duplicate:
+          type: object
+          properties:
+            locationName:
+              type: string
+              description: Name of duplicate location
+        mapsUrl:
+          type: string
+          format: uri
+          description: Google Maps URL
+        newReviewUrl:
+          type: string
+          format: uri
+          description: URL for leaving new reviews
+
+    LocationDrivingDirectionMetrics:
+      type: object
+      properties:
+        locationName:
+          type: string
+        timeZone:
+          type: string
+        topDirectionSources:
+          type: array
+          items:
+            type: object
+            properties:
+              dayCount:
+                type: integer
+              regionCount:
+                type: integer
+
+    DrivingDirectionMetricsRequest:
+      type: object
+      properties:
+        languageCode:
+          type: string
+        numDays:
+          type: string
+          enum: [SEVEN, THIRTY]
+
+security:
+  - OAuth2: [https://www.googleapis.com/auth/business.manage]
+
+tags:
+  - name: Accounts
+    description: Business account management and administration
+  - name: Locations
+    description: Business location creation, updates, and management
+  - name: Local Posts
+    description: Local post creation and management for business promotion
+  - name: Media
+    description: Photo and video upload and management
+  - name: Reviews
+    description: Customer review management and response handling
+  - name: Q&A
+    description: Customer questions and answers management
+  - name: Insights
+    description: Business performance analytics and insights
+  - name: Categories
+    description: Business category information and management
+  - name: Verification
+    description: Business location verification process

@@ -1,0 +1,1817 @@
+openapi: 3.0.3
+info:
+  title: Snapchat Marketing API
+  description: |
+    The Snapchat Marketing API provides programmatic control over the full advertising lifecycle,
+    enabling you to reach 400M+ daily active users with native advertising experiences.
+    
+    **Key Capabilities:**
+    - **Campaign Management**: Create and manage campaigns, ad squads, and ads at scale
+    - **Creative Automation**: Upload media, build creatives, and deploy Dynamic Product Ads
+    - **AR Advertising**: Deploy sponsored Lenses and Filters for camera interaction
+    - **Audience Targeting**: Reach users by demographics, location, interests, and custom audiences
+    - **Measurement & Reporting**: Real-time performance stats with flexible granularity
+    - **Lead Generation**: Collect leads directly within Snapchat using customizable forms
+    - **Media Management**: Comprehensive media upload and management
+    - **Organizations**: Multi-account and agency management
+    
+    **Base URL:** https://adsapi.snapchat.com/v1
+    **Authentication:** OAuth 2.0
+    **API Hierarchy:** Organization → Ad Account → Campaign → Ad Squad → Ad → Creative
+  version: "1.0"
+  contact:
+    name: Snap for Developers
+    url: https://developers.snap.com/api/marketing-api/
+  license:
+    name: Snapchat API Terms
+    url: https://www.snap.com/en-US/terms/
+servers:
+  - url: https://adsapi.snapchat.com/v1
+    description: Snapchat Ads API
+
+paths:
+  # Organizations
+  /organizations:
+    get:
+      tags: [Organizations]
+      summary: Get organizations
+      description: Get all organizations accessible by the authenticated user
+      responses:
+        '200':
+          description: Organizations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationListResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  /organizations/{organization_id}:
+    get:
+      tags: [Organizations]
+      summary: Get organization
+      description: Get a specific organization by ID
+      parameters:
+        - name: organization_id
+          in: path
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Organization retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+        '404':
+          description: Organization not found
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  # Ad Accounts
+  /adaccounts:
+    get:
+      tags: [Ad Accounts]
+      summary: Get ad accounts
+      description: Get all ad accounts accessible by the authenticated user
+      parameters:
+        - name: organization_id
+          in: query
+          description: Filter by organization ID
+          schema:
+            type: string
+        - name: with_ad_account_name
+          in: query
+          description: Include ad account name
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Ad accounts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdAccountListResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  /adaccounts/{ad_account_id}:
+    get:
+      tags: [Ad Accounts]
+      summary: Get ad account
+      description: Get a specific ad account by ID
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ad account retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdAccountResponse'
+        '404':
+          description: Ad account not found
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+    put:
+      tags: [Ad Accounts]
+      summary: Update ad account
+      description: Update an ad account
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdAccount'
+      responses:
+        '200':
+          description: Ad account updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdAccountResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  # Campaigns
+  /adaccounts/{ad_account_id}/campaigns:
+    get:
+      tags: [Campaigns]
+      summary: Get campaigns
+      description: Get all campaigns for an ad account
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        '200':
+          description: Campaigns retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignListResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+    post:
+      tags: [Campaigns]
+      summary: Create campaign
+      description: Create a new campaign
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Campaign'
+            example:
+              name: "Holiday Sales Campaign"
+              objective_v2_properties:
+                objective_type: "WEBSITE_CONVERSIONS"
+                conversion_optimization_event: "PURCHASE"
+              status: "ACTIVE"
+              start_time: "2026-02-15T00:00:00.000Z"
+              end_time: "2026-02-28T23:59:59.000Z"
+      responses:
+        '200':
+          description: Campaign created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  /adaccounts/{ad_account_id}/campaigns/{campaign_id}:
+    get:
+      tags: [Campaigns]
+      summary: Get campaign
+      description: Get a specific campaign
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: campaign_id
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Campaign retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignResponse'
+        '404':
+          description: Campaign not found
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+    put:
+      tags: [Campaigns]
+      summary: Update campaign
+      description: Update an existing campaign
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: campaign_id
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Campaign'
+      responses:
+        '200':
+          description: Campaign updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+    delete:
+      tags: [Campaigns]
+      summary: Delete campaign
+      description: Delete a campaign
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: campaign_id
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Campaign deleted successfully
+        '404':
+          description: Campaign not found
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  # Ad Squads
+  /adaccounts/{ad_account_id}/adsquads:
+    get:
+      tags: [Ad Squads]
+      summary: Get ad squads
+      description: Get all ad squads for an ad account
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: campaign_id
+          in: query
+          description: Filter by campaign ID
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        '200':
+          description: Ad squads retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdSquadListResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+    post:
+      tags: [Ad Squads]
+      summary: Create ad squad
+      description: Create a new ad squad
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdSquad'
+            example:
+              name: "Holiday Targeting Squad"
+              campaign_id: "campaign123"
+              status: "ACTIVE"
+              type: "SNAP_ADS"
+              placement_v2:
+                config: "AUTOMATIC_PLACEMENT"
+              billing_event: "IMPRESSION"
+              bid_micro: 5000000
+              daily_budget_micro: 10000000000
+              start_time: "2026-02-15T00:00:00.000Z"
+              targeting:
+                demographics:
+                  - min_age: 21
+                    max_age: 34
+                geos:
+                  - country_code: "us"
+      responses:
+        '200':
+          description: Ad squad created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdSquadResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  # Ads
+  /adaccounts/{ad_account_id}/ads:
+    get:
+      tags: [Ads]
+      summary: Get ads
+      description: Get all ads for an ad account
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: ad_squad_id
+          in: query
+          description: Filter by ad squad ID
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        '200':
+          description: Ads retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdListResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+    post:
+      tags: [Ads]
+      summary: Create ad
+      description: Create a new ad
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ad'
+            example:
+              name: "Holiday Sale Ad"
+              ad_squad_id: "adsquad123"
+              creative_id: "creative456"
+              status: "ACTIVE"
+      responses:
+        '200':
+          description: Ad created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  # Creatives
+  /adaccounts/{ad_account_id}/creatives:
+    get:
+      tags: [Creatives]
+      summary: Get creatives
+      description: Get all creatives for an ad account
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        '200':
+          description: Creatives retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreativeListResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+    post:
+      tags: [Creatives]
+      summary: Create creative
+      description: Create a new creative
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Creative'
+            example:
+              name: "Holiday Video Creative"
+              type: "SNAP_AD"
+              packaging_status: "PENDING"
+              top_snap_media_id: "media123"
+              headline: "Shop Holiday Deals Now!"
+              call_to_action: "SHOP_NOW"
+              profile_properties:
+                profile_id: "profile456"
+              brand_name: "My Store"
+      responses:
+        '200':
+          description: Creative created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreativeResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  # Media
+  /adaccounts/{ad_account_id}/media:
+    get:
+      tags: [Media]
+      summary: Get media
+      description: Get all media for an ad account
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        '200':
+          description: Media retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaListResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+    post:
+      tags: [Media]
+      summary: Upload media
+      description: Upload a new media file
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Media file to upload
+                name:
+                  type: string
+                  description: Media name
+                type:
+                  type: string
+                  enum: [IMAGE, VIDEO]
+                  description: Media type
+              required: [file]
+      responses:
+        '200':
+          description: Media uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  # Audience Segments (Custom Audiences)
+  /adaccounts/{ad_account_id}/segments:
+    get:
+      tags: [Audience Segments]
+      summary: Get audience segments
+      description: Get all audience segments for an ad account
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        '200':
+          description: Audience segments retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudienceSegmentListResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+    post:
+      tags: [Audience Segments]
+      summary: Create audience segment
+      description: Create a new audience segment
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AudienceSegment'
+            example:
+              name: "Website Visitors"
+              description: "Users who visited our website in the last 30 days"
+              source_type: "FIRST_PARTY"
+              retention_in_days: 30
+      responses:
+        '200':
+          description: Audience segment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudienceSegmentResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  # Audience Segment Users
+  /adaccounts/{ad_account_id}/segments/{segment_id}/users:
+    post:
+      tags: [Audience Segments]
+      summary: Upload users to segment
+      description: Upload user data to an audience segment
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: segment_id
+          in: path
+          required: true
+          description: Audience segment ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                users:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SegmentUser'
+                  description: List of users to add to the segment
+                  maxItems: 10000
+              required: [users]
+            example:
+              users:
+                - hashed_email: "a03dab42b9e5e8c8c1b8f5f4d4e2e1a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+                  hashed_phone: "b1e3f5g7h9i1j3k5l7m9n1o3p5q7r9s1t3u5v7w9x1y3z5"
+                - hashed_email: "c04ebc53a9f6f9d9d2c9g6g5e5f3f2b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7"
+      responses:
+        '200':
+          description: Users uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentUsersResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  # Analytics and Stats
+  /adaccounts/{ad_account_id}/campaigns/{campaign_id}/stats:
+    get:
+      tags: [Analytics]
+      summary: Get campaign stats
+      description: Get performance statistics for a campaign
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: campaign_id
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+        - name: granularity
+          in: query
+          description: Time granularity for stats
+          schema:
+            type: string
+            enum: [TOTAL, DAY, HOUR]
+            default: TOTAL
+        - name: fields
+          in: query
+          description: Comma-separated list of stat fields
+          schema:
+            type: string
+            default: "impressions,swipes,spend,conversion_purchases,conversion_purchases_value"
+        - name: start_time
+          in: query
+          description: Start time for stats (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: end_time
+          in: query
+          description: End time for stats (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: breakdown
+          in: query
+          description: Breakdown dimensions
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [age, gender, country, placement, conversion_source]
+      responses:
+        '200':
+          description: Campaign stats retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  /adaccounts/{ad_account_id}/adsquads/{ad_squad_id}/stats:
+    get:
+      tags: [Analytics]
+      summary: Get ad squad stats
+      description: Get performance statistics for an ad squad
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: ad_squad_id
+          in: path
+          required: true
+          description: Ad squad ID
+          schema:
+            type: string
+        - name: granularity
+          in: query
+          description: Time granularity for stats
+          schema:
+            type: string
+            enum: [TOTAL, DAY, HOUR]
+            default: TOTAL
+        - name: fields
+          in: query
+          description: Comma-separated list of stat fields
+          schema:
+            type: string
+            default: "impressions,swipes,spend,video_views,conversion_purchases"
+        - name: start_time
+          in: query
+          description: Start time for stats (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: end_time
+          in: query
+          description: End time for stats (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: breakdown
+          in: query
+          description: Breakdown dimensions
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [age, gender, country, placement, conversion_source]
+      responses:
+        '200':
+          description: Ad squad stats retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  /adaccounts/{ad_account_id}/ads/{ad_id}/stats:
+    get:
+      tags: [Analytics]
+      summary: Get ad stats
+      description: Get performance statistics for an ad
+      parameters:
+        - name: ad_account_id
+          in: path
+          required: true
+          description: Ad account ID
+          schema:
+            type: string
+        - name: ad_id
+          in: path
+          required: true
+          description: Ad ID
+          schema:
+            type: string
+        - name: granularity
+          in: query
+          description: Time granularity for stats
+          schema:
+            type: string
+            enum: [TOTAL, DAY, HOUR]
+            default: TOTAL
+        - name: fields
+          in: query
+          description: Comma-separated list of stat fields
+          schema:
+            type: string
+            default: "impressions,swipes,spend,quartile_1,quartile_2,quartile_3,view_completion"
+        - name: start_time
+          in: query
+          description: Start time for stats (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: end_time
+          in: query
+          description: End time for stats (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Ad stats retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  # Targeting Options
+  /targeting/demographics:
+    get:
+      tags: [Targeting]
+      summary: Get demographic targeting options
+      description: Get available demographic targeting options
+      parameters:
+        - name: country_codes
+          in: query
+          description: Comma-separated list of country codes
+          schema:
+            type: string
+            example: "US,CA,GB"
+      responses:
+        '200':
+          description: Demographic targeting options retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemographicTargetingResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  /targeting/interests:
+    get:
+      tags: [Targeting]
+      summary: Get interest targeting options
+      description: Get available interest targeting options
+      parameters:
+        - name: country_code
+          in: query
+          description: Country code for interest targeting
+          schema:
+            type: string
+            default: "US"
+        - name: q
+          in: query
+          description: Search query for interests
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Interest targeting options retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterestTargetingResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+  /targeting/geos:
+    get:
+      tags: [Targeting]
+      summary: Get geo targeting options
+      description: Get available geographic targeting options
+      parameters:
+        - name: country_code
+          in: query
+          description: Country code for geo targeting
+          schema:
+            type: string
+            default: "US"
+        - name: q
+          in: query
+          description: Search query for locations
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Geographic targeting options retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeoTargetingResponse'
+        '400':
+          description: Invalid request
+      security:
+        - OAuth2: [snapchat-marketing-api]
+
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://accounts.snapchat.com/accounts/oauth2/auth
+          tokenUrl: https://accounts.snapchat.com/accounts/oauth2/token
+          scopes:
+            snapchat-marketing-api: Access to Snapchat Marketing API
+
+  schemas:
+    # Organization
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Organization ID
+        name:
+          type: string
+          description: Organization name
+        type:
+          type: string
+          enum: [DIRECT_ADVERTISER, PARTNER]
+          description: Organization type
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        state:
+          type: string
+          enum: [ACTIVE, PAUSED]
+          description: Organization state
+
+    OrganizationListResponse:
+      type: object
+      properties:
+        organizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Organization'
+        paging:
+          $ref: '#/components/schemas/Paging'
+
+    OrganizationResponse:
+      type: object
+      properties:
+        organization:
+          $ref: '#/components/schemas/Organization'
+
+    # Ad Account
+    AdAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Ad account ID
+        name:
+          type: string
+          description: Ad account name
+        type:
+          type: string
+          enum: [DIRECT_ADVERTISER, PARTNER, CHILD]
+          description: Ad account type
+        status:
+          type: string
+          enum: [ACTIVE, PAUSED, PENDING, REJECTED, SUSPENDED]
+          description: Ad account status
+        organization_id:
+          type: string
+          description: Parent organization ID
+        currency:
+          type: string
+          description: Account currency (ISO 4217)
+          example: "USD"
+        timezone:
+          type: string
+          description: Account timezone
+          example: "America/Los_Angeles"
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    AdAccountListResponse:
+      type: object
+      properties:
+        adaccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdAccount'
+        paging:
+          $ref: '#/components/schemas/Paging'
+
+    AdAccountResponse:
+      type: object
+      properties:
+        adaccount:
+          $ref: '#/components/schemas/AdAccount'
+
+    # Campaign
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Campaign ID
+          readOnly: true
+        name:
+          type: string
+          description: Campaign name
+          maxLength: 255
+        status:
+          type: string
+          enum: [ACTIVE, PAUSED, PENDING, ARCHIVED]
+          description: Campaign status
+        objective_v2_properties:
+          $ref: '#/components/schemas/ObjectiveV2Properties'
+        start_time:
+          type: string
+          format: date-time
+          description: Campaign start time
+        end_time:
+          type: string
+          format: date-time
+          description: Campaign end time
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          readOnly: true
+
+    ObjectiveV2Properties:
+      type: object
+      properties:
+        objective_type:
+          type: string
+          enum: [AWARENESS, VIDEO_VIEWS, REACH, WEBSITE_CONVERSIONS, APP_INSTALLS, 
+                 LEAD_GENERATION, DRIVE_TRAFFIC, CATALOGUE_SALES]
+          description: Campaign objective type
+        conversion_optimization_event:
+          type: string
+          enum: [PAGE_VIEW, VIEW_CONTENT, ADD_CART, ADD_BILLING, COMPLETE_REGISTRATION,
+                 SEARCH, LEVEL_COMPLETE, TUTORIAL_COMPLETE, INVITE, LOGIN, SHARE,
+                 RESERVE, ACHIEVEMENT_UNLOCKED, SPENT_CREDITS, RATE, START_CHECKOUT,
+                 ADD_TO_WISHLIST, PURCHASE, SUBSCRIBE]
+          description: Conversion optimization event
+
+    CampaignListResponse:
+      type: object
+      properties:
+        campaigns:
+          type: array
+          items:
+            $ref: '#/components/schemas/Campaign'
+        paging:
+          $ref: '#/components/schemas/Paging'
+
+    CampaignResponse:
+      type: object
+      properties:
+        campaign:
+          $ref: '#/components/schemas/Campaign'
+
+    # Ad Squad
+    AdSquad:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Ad squad ID
+          readOnly: true
+        name:
+          type: string
+          description: Ad squad name
+          maxLength: 255
+        campaign_id:
+          type: string
+          description: Parent campaign ID
+        status:
+          type: string
+          enum: [ACTIVE, PAUSED, PENDING, ARCHIVED]
+          description: Ad squad status
+        type:
+          type: string
+          enum: [SNAP_ADS, STORY_ADS, COLLECTION_ADS, COMMERCIAL_ADS]
+          description: Ad squad type
+        placement_v2:
+          $ref: '#/components/schemas/PlacementV2'
+        billing_event:
+          type: string
+          enum: [IMPRESSION, SWIPE]
+          description: Billing event
+        bid_micro:
+          type: integer
+          description: Bid amount in micro currency (1/1000000)
+        daily_budget_micro:
+          type: integer
+          description: Daily budget in micro currency
+        lifetime_budget_micro:
+          type: integer
+          description: Lifetime budget in micro currency
+        start_time:
+          type: string
+          format: date-time
+          description: Ad squad start time
+        end_time:
+          type: string
+          format: date-time
+          description: Ad squad end time
+        targeting:
+          $ref: '#/components/schemas/Targeting'
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          readOnly: true
+
+    PlacementV2:
+      type: object
+      properties:
+        config:
+          type: string
+          enum: [AUTOMATIC_PLACEMENT, FEED_PLACEMENT_ONLY]
+          description: Placement configuration
+
+    Targeting:
+      type: object
+      properties:
+        demographics:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemographicTargeting'
+          description: Demographic targeting
+        geos:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeoTargeting'
+          description: Geographic targeting
+        interests:
+          type: array
+          items:
+            type: string
+          description: Interest targeting IDs
+        segments:
+          type: array
+          items:
+            type: string
+          description: Audience segment IDs
+        enable_targeting_expansion:
+          type: boolean
+          description: Enable targeting expansion
+        regulated_content:
+          type: boolean
+          description: Mark content as regulated
+
+    DemographicTargeting:
+      type: object
+      properties:
+        min_age:
+          type: integer
+          minimum: 13
+          maximum: 65
+          description: Minimum age
+        max_age:
+          type: integer
+          minimum: 13
+          maximum: 65
+          description: Maximum age
+        genders:
+          type: array
+          items:
+            type: string
+            enum: [MALE, FEMALE]
+          description: Gender targeting
+        languages:
+          type: array
+          items:
+            type: string
+          description: Language targeting (ISO 639-1)
+        advanced_demographics:
+          type: array
+          items:
+            type: string
+          description: Advanced demographic IDs
+
+    GeoTargeting:
+      type: object
+      properties:
+        country_code:
+          type: string
+          description: Country code (ISO 3166-1 alpha-2)
+          example: "US"
+        region:
+          type: string
+          description: Region or state code
+        metro:
+          type: string
+          description: Metro area ID
+        postal_code:
+          type: string
+          description: Postal/ZIP code
+
+    AdSquadListResponse:
+      type: object
+      properties:
+        adsquads:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdSquad'
+        paging:
+          $ref: '#/components/schemas/Paging'
+
+    AdSquadResponse:
+      type: object
+      properties:
+        adsquad:
+          $ref: '#/components/schemas/AdSquad'
+
+    # Ad
+    Ad:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Ad ID
+          readOnly: true
+        name:
+          type: string
+          description: Ad name
+          maxLength: 255
+        ad_squad_id:
+          type: string
+          description: Parent ad squad ID
+        creative_id:
+          type: string
+          description: Creative ID
+        status:
+          type: string
+          enum: [ACTIVE, PAUSED, PENDING, ARCHIVED]
+          description: Ad status
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          readOnly: true
+
+    AdListResponse:
+      type: object
+      properties:
+        ads:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ad'
+        paging:
+          $ref: '#/components/schemas/Paging'
+
+    AdResponse:
+      type: object
+      properties:
+        ad:
+          $ref: '#/components/schemas/Ad'
+
+    # Creative
+    Creative:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Creative ID
+          readOnly: true
+        name:
+          type: string
+          description: Creative name
+          maxLength: 255
+        type:
+          type: string
+          enum: [SNAP_AD, STORY_AD, COLLECTION_AD, COMMERCIAL_AD]
+          description: Creative type
+        packaging_status:
+          type: string
+          enum: [PENDING, SUCCESS, ERROR]
+          description: Creative packaging status
+          readOnly: true
+        top_snap_media_id:
+          type: string
+          description: Top snap media ID
+        headline:
+          type: string
+          description: Creative headline
+          maxLength: 34
+        call_to_action:
+          type: string
+          enum: [APPLY_NOW, BOOK_NOW, CALL_NOW, DOWNLOAD, GET_DIRECTIONS, INSTALL_APP,
+                 LEARN_MORE, OPEN_APP, ORDER_NOW, PLAY_GAME, SEE_MORE, SHOP_NOW, 
+                 SIGN_UP, SUBSCRIBE, SWIPE_UP, USE_APP, WATCH_MORE]
+          description: Call-to-action button
+        profile_properties:
+          $ref: '#/components/schemas/ProfileProperties'
+        brand_name:
+          type: string
+          description: Brand name override
+          maxLength: 25
+        shareable:
+          type: boolean
+          description: Whether creative is shareable
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          readOnly: true
+
+    ProfileProperties:
+      type: object
+      properties:
+        profile_id:
+          type: string
+          description: Profile ID for the creative
+      required: [profile_id]
+
+    CreativeListResponse:
+      type: object
+      properties:
+        creatives:
+          type: array
+          items:
+            $ref: '#/components/schemas/Creative'
+        paging:
+          $ref: '#/components/schemas/Paging'
+
+    CreativeResponse:
+      type: object
+      properties:
+        creative:
+          $ref: '#/components/schemas/Creative'
+
+    # Media
+    Media:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Media ID
+          readOnly: true
+        name:
+          type: string
+          description: Media name
+        type:
+          type: string
+          enum: [IMAGE, VIDEO]
+          description: Media type
+          readOnly: true
+        media_status:
+          type: string
+          enum: [PENDING_UPLOAD, PROCESSING, READY, ERROR]
+          description: Media processing status
+          readOnly: true
+        file_name:
+          type: string
+          description: Original file name
+          readOnly: true
+        download_link:
+          type: string
+          format: uri
+          description: Download link for the media
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          readOnly: true
+
+    MediaListResponse:
+      type: object
+      properties:
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/Media'
+        paging:
+          $ref: '#/components/schemas/Paging'
+
+    MediaResponse:
+      type: object
+      properties:
+        media:
+          $ref: '#/components/schemas/Media'
+
+    # Audience Segment
+    AudienceSegment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Audience segment ID
+          readOnly: true
+        name:
+          type: string
+          description: Audience segment name
+          maxLength: 255
+        description:
+          type: string
+          description: Audience segment description
+          maxLength: 500
+        source_type:
+          type: string
+          enum: [FIRST_PARTY, PIXEL, ENGAGEMENT, LOOKALIKE]
+          description: Source type of the audience
+        retention_in_days:
+          type: integer
+          minimum: 1
+          maximum: 180
+          description: Retention period in days
+        approximate_number_users:
+          type: integer
+          description: Approximate number of users
+          readOnly: true
+        status:
+          type: string
+          enum: [PREPARING, UPLOADING, PENDING, PROCESSING, READY, TOO_SMALL, ERROR]
+          description: Audience segment status
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          readOnly: true
+
+    AudienceSegmentListResponse:
+      type: object
+      properties:
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/AudienceSegment'
+        paging:
+          $ref: '#/components/schemas/Paging'
+
+    AudienceSegmentResponse:
+      type: object
+      properties:
+        segment:
+          $ref: '#/components/schemas/AudienceSegment'
+
+    SegmentUser:
+      type: object
+      properties:
+        hashed_email:
+          type: string
+          description: SHA-256 hashed email address
+        hashed_phone:
+          type: string
+          description: SHA-256 hashed phone number
+        hashed_mobile_ad_id:
+          type: string
+          description: SHA-256 hashed mobile advertising ID
+
+    SegmentUsersResponse:
+      type: object
+      properties:
+        number_uploaded_users:
+          type: integer
+          description: Number of users successfully uploaded
+        upload_status:
+          type: string
+          enum: [SUCCESS, PARTIAL_SUCCESS, ERROR]
+          description: Upload status
+
+    # Analytics
+    Stats:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Entity ID
+        type:
+          type: string
+          enum: [CAMPAIGN, ADSQUAD, AD]
+          description: Entity type
+        granularity:
+          type: string
+          enum: [TOTAL, DAY, HOUR]
+          description: Time granularity
+        start_time:
+          type: string
+          format: date-time
+          description: Start time of the stats period
+        end_time:
+          type: string
+          format: date-time
+          description: End time of the stats period
+        finalized_data_end_time:
+          type: string
+          format: date-time
+          description: End time of finalized data
+        stats:
+          $ref: '#/components/schemas/StatsData'
+        dimension_stats:
+          type: array
+          items:
+            $ref: '#/components/schemas/DimensionStats'
+          description: Breakdown stats by dimensions
+
+    StatsData:
+      type: object
+      properties:
+        impressions:
+          type: integer
+          description: Number of impressions
+        swipes:
+          type: integer
+          description: Number of swipes
+        spend:
+          type: integer
+          description: Spend in micro currency
+        video_views:
+          type: integer
+          description: Number of video views
+        quartile_1:
+          type: integer
+          description: 25% video completion views
+        quartile_2:
+          type: integer
+          description: 50% video completion views
+        quartile_3:
+          type: integer
+          description: 75% video completion views
+        view_completion:
+          type: integer
+          description: 100% video completion views
+        conversion_purchases:
+          type: integer
+          description: Number of purchase conversions
+        conversion_purchases_value:
+          type: integer
+          description: Value of purchase conversions in micro currency
+        conversion_app_opens:
+          type: integer
+          description: Number of app open conversions
+        conversion_sign_ups:
+          type: integer
+          description: Number of sign up conversions
+
+    DimensionStats:
+      type: object
+      properties:
+        dimension:
+          type: string
+          description: Dimension name
+        dimension_value:
+          type: string
+          description: Dimension value
+        stats:
+          $ref: '#/components/schemas/StatsData'
+
+    StatsResponse:
+      type: object
+      properties:
+        total_stats:
+          type: array
+          items:
+            $ref: '#/components/schemas/Stats'
+        paging:
+          $ref: '#/components/schemas/Paging'
+
+    # Targeting Options
+    DemographicTargetingResponse:
+      type: object
+      properties:
+        demographic_options:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemographicOption'
+
+    DemographicOption:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Option ID
+        name:
+          type: string
+          description: Option name
+        path:
+          type: string
+          description: Option path
+        country_code:
+          type: string
+          description: Country code
+
+    InterestTargetingResponse:
+      type: object
+      properties:
+        interest_options:
+          type: array
+          items:
+            $ref: '#/components/schemas/InterestOption'
+
+    InterestOption:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Interest ID
+        name:
+          type: string
+          description: Interest name
+        path:
+          type: string
+          description: Interest path
+        targetable:
+          type: boolean
+          description: Whether interest is targetable
+
+    GeoTargetingResponse:
+      type: object
+      properties:
+        geo_options:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeoOption'
+
+    GeoOption:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Geo ID
+        name:
+          type: string
+          description: Geo name
+        country_code:
+          type: string
+          description: Country code
+        type:
+          type: string
+          enum: [COUNTRY, REGION, METRO, POSTAL_CODE]
+          description: Geo type
+
+    # Common
+    Paging:
+      type: object
+      properties:
+        next_link:
+          type: string
+          format: uri
+          description: Link to next page
+        prev_link:
+          type: string
+          format: uri
+          description: Link to previous page
+
+security:
+  - OAuth2: [snapchat-marketing-api]
+
+tags:
+  - name: Organizations
+    description: Organization and account management
+  - name: Ad Accounts
+    description: Ad account management and settings
+  - name: Campaigns
+    description: Campaign creation and management
+  - name: Ad Squads
+    description: Ad squad targeting, budgeting, and optimization
+  - name: Ads
+    description: Individual ad management
+  - name: Creatives
+    description: Creative asset management and optimization
+  - name: Media
+    description: Media upload and management
+  - name: Audience Segments
+    description: Custom audience creation and management
+  - name: Analytics
+    description: Performance reporting and analytics
+  - name: Targeting
+    description: Targeting options and audience discovery

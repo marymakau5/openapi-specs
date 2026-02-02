@@ -1,0 +1,2419 @@
+openapi: 3.0.3
+info:
+  title: Reddit API
+  description: |
+    The Reddit API provides programmatic access to Reddit's features including submissions, 
+    comments, subreddits, user profiles, voting, moderation, messaging, and wiki management.
+    
+    **Key Features:**
+    - **Submissions**: Create and manage posts, links, and content
+    - **Comments**: Comment management and threading
+    - **Subreddits**: Community information and moderation
+    - **Users**: User profiles, trophies, and account management
+    - **Voting**: Upvote and downvote functionality  
+    - **Moderation**: Content moderation and community management
+    - **Messages**: Private messaging system
+    - **Wiki**: Wiki pages and collaborative editing
+    - **Search**: Content discovery and search
+    
+    **Authentication:** OAuth 2.0 with multiple scopes for granular permissions
+    **Base URL:** https://oauth.reddit.com (for authenticated requests)
+    **Rate Limiting:** 60 requests per minute for most endpoints
+  version: "1.0"
+  contact:
+    name: Reddit API Documentation
+    url: https://www.reddit.com/dev/api
+  license:
+    name: Reddit API Terms
+    url: https://www.reddit.com/wiki/api
+servers:
+  - url: https://oauth.reddit.com
+    description: Reddit OAuth API
+  - url: https://www.reddit.com
+    description: Reddit Public API (limited functionality)
+
+paths:
+  # Submissions (Posts)
+  /api/submit:
+    post:
+      tags: [Submissions]
+      summary: Submit a post
+      description: |
+        Submit a link or text post to a subreddit. Supports various post types including
+        text posts, link posts, image posts, video posts, and polls.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+                  enum: [link, self, image, video, videogif, poll]
+                  description: Type of submission
+                  default: self
+                sr:
+                  type: string
+                  description: Subreddit name (without /r/ prefix)
+                  example: "AskReddit"
+                title:
+                  type: string
+                  description: Title of the submission
+                  maxLength: 300
+                  example: "What's the best advice you've ever received?"
+                text:
+                  type: string
+                  description: Body text for self posts (Markdown supported)
+                url:
+                  type: string
+                  format: uri
+                  description: URL for link posts
+                nsfw:
+                  type: boolean
+                  description: Mark post as NSFW (Not Safe For Work)
+                  default: false
+                spoiler:
+                  type: boolean
+                  description: Mark post as containing spoilers
+                  default: false
+                sendreplies:
+                  type: boolean
+                  description: Send inbox replies for comments
+                  default: true
+                flair_id:
+                  type: string
+                  description: Flair template ID
+                flair_text:
+                  type: string
+                  description: Custom flair text
+                crosspost_fullname:
+                  type: string
+                  description: Fullname of post being crossposted
+                poll_options:
+                  type: string
+                  description: Poll options (comma-separated for poll posts)
+                poll_duration:
+                  type: integer
+                  description: Poll duration in days (1-7)
+                  minimum: 1
+                  maximum: 7
+                g-recaptcha-response:
+                  type: string
+                  description: reCAPTCHA response (if required)
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+                  description: Response format
+              required: [sr, title]
+      responses:
+        '200':
+          description: Submission created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+              example:
+                json:
+                  errors: []
+                  data:
+                    url: "https://www.reddit.com/r/AskReddit/comments/abc123/whats_the_best_advice/"
+                    drafts_count: 0
+                    id: "abc123"
+                    name: "t3_abc123"
+        '400':
+          description: Bad request - validation errors
+        '403':
+          description: Forbidden - insufficient permissions
+        '429':
+          description: Rate limit exceeded
+      security:
+        - OAuth2: [submit]
+
+  # Get Submission Details
+  /comments/{article}:
+    get:
+      tags: [Submissions]
+      summary: Get submission and comments
+      description: Get a submission with its comments thread
+      parameters:
+        - name: article
+          in: path
+          required: true
+          description: Submission ID (without t3_ prefix)
+          schema:
+            type: string
+            example: "abc123"
+        - name: comment
+          in: query
+          description: Specific comment ID to focus on
+          schema:
+            type: string
+        - name: context
+          in: query
+          description: Number of parent comments to show
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 8
+        - name: depth
+          in: query
+          description: Maximum comment thread depth
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+        - name: limit
+          in: query
+          description: Maximum number of comments
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+        - name: showedits
+          in: query
+          description: Show comment edit history
+          schema:
+            type: boolean
+        - name: showmore
+          in: query
+          description: Show "more comments" links
+          schema:
+            type: boolean
+            default: true
+        - name: sort
+          in: query
+          description: Comment sort order
+          schema:
+            type: string
+            enum: [confidence, top, new, controversial, old, random, qa, live]
+            default: confidence
+        - name: threaded
+          in: query
+          description: Show threaded comments
+          schema:
+            type: boolean
+            default: true
+        - name: truncate
+          in: query
+          description: Truncate long comment trees
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Submission and comments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Listing'
+        '404':
+          description: Submission not found
+      security:
+        - OAuth2: [read]
+        - ApiKeyAuth: []
+
+  # Comments
+  /api/comment:
+    post:
+      tags: [Comments]
+      summary: Add a comment
+      description: Add a comment to a submission or reply to an existing comment
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                parent:
+                  type: string
+                  description: Fullname of parent (submission or comment)
+                  example: "t3_abc123"
+                text:
+                  type: string
+                  description: Comment text (Markdown supported)
+                  example: "This is a great post! Thanks for sharing."
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [parent, text]
+      responses:
+        '200':
+          description: Comment added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '400':
+          description: Bad request
+        '403':
+          description: Forbidden
+        '429':
+          description: Rate limit exceeded
+      security:
+        - OAuth2: [submit]
+
+  /api/editusertext:
+    post:
+      tags: [Comments]
+      summary: Edit comment or submission text
+      description: Edit the text of a comment or self-post
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                thing_id:
+                  type: string
+                  description: Fullname of comment or submission
+                  example: "t1_def456"
+                text:
+                  type: string
+                  description: New text content (Markdown supported)
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [thing_id, text]
+      responses:
+        '200':
+          description: Text edited successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '403':
+          description: Cannot edit this item
+      security:
+        - OAuth2: [edit]
+
+  /api/del:
+    post:
+      tags: [Comments]
+      summary: Delete comment or submission
+      description: Delete a comment or submission
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Fullname of item to delete
+                  example: "t1_def456"
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [id]
+      responses:
+        '200':
+          description: Item deleted successfully
+        '403':
+          description: Cannot delete this item
+      security:
+        - OAuth2: [edit]
+
+  # Voting
+  /api/vote:
+    post:
+      tags: [Voting]
+      summary: Vote on a post or comment
+      description: Cast an upvote, downvote, or remove vote
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Fullname of item to vote on
+                  example: "t3_abc123"
+                dir:
+                  type: integer
+                  enum: [-1, 0, 1]
+                  description: Vote direction (-1=downvote, 0=remove vote, 1=upvote)
+                rank:
+                  type: integer
+                  description: Vote rank (for contest mode)
+              required: [id, dir]
+      responses:
+        '200':
+          description: Vote cast successfully
+        '403':
+          description: Cannot vote on this item
+        '429':
+          description: Rate limit exceeded
+      security:
+        - OAuth2: [vote]
+
+  # Subreddit Information
+  /r/{subreddit}/about:
+    get:
+      tags: [Subreddits]
+      summary: Get subreddit information
+      description: Get detailed information about a subreddit
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          description: Subreddit name
+          schema:
+            type: string
+            example: "AskReddit"
+      responses:
+        '200':
+          description: Subreddit information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                    example: "t5"
+                  data:
+                    $ref: '#/components/schemas/Subreddit'
+        '404':
+          description: Subreddit not found
+      security:
+        - OAuth2: [read]
+        - ApiKeyAuth: []
+
+  # Subreddit Posts
+  /r/{subreddit}:
+    get:
+      tags: [Subreddits]
+      summary: Get subreddit posts
+      description: Get posts from a specific subreddit
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          description: Subreddit name
+          schema:
+            type: string
+            example: "AskReddit"
+        - name: sort
+          in: query
+          description: Sort order for posts
+          schema:
+            type: string
+            enum: [hot, new, rising, top]
+            default: hot
+        - name: t
+          in: query
+          description: Time period for top sorting
+          schema:
+            type: string
+            enum: [hour, day, week, month, year, all]
+            default: all
+        - name: limit
+          in: query
+          description: Number of posts to retrieve
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: after
+          in: query
+          description: Fullname for pagination
+          schema:
+            type: string
+        - name: before
+          in: query
+          description: Fullname for pagination
+          schema:
+            type: string
+        - name: count
+          in: query
+          description: Number of items already seen
+          schema:
+            type: integer
+        - name: show
+          in: query
+          description: Show all posts (including filtered)
+          schema:
+            type: string
+            enum: [all]
+      responses:
+        '200':
+          description: Posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+        '404':
+          description: Subreddit not found
+      security:
+        - OAuth2: [read]
+        - ApiKeyAuth: []
+
+  # User Profile
+  /user/{username}/about:
+    get:
+      tags: [Users]
+      summary: Get user information
+      description: Get public information about a user
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: Reddit username
+          schema:
+            type: string
+            example: "spez"
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                    example: "t2"
+                  data:
+                    $ref: '#/components/schemas/Account'
+        '404':
+          description: User not found
+      security:
+        - OAuth2: [read]
+        - ApiKeyAuth: []
+
+  # Current User
+  /api/v1/me:
+    get:
+      tags: [Users]
+      summary: Get current user info
+      description: Get information about the authenticated user
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '401':
+          description: Not authenticated
+      security:
+        - OAuth2: [identity]
+
+  # User Preferences
+  /api/v1/me/prefs:
+    get:
+      tags: [Users]
+      summary: Get user preferences
+      description: Get the authenticated user's preferences
+      responses:
+        '200':
+          description: Preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '401':
+          description: Not authenticated
+      security:
+        - OAuth2: [identity]
+
+    patch:
+      tags: [Users]
+      summary: Update user preferences
+      description: Update the authenticated user's preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferences'
+      responses:
+        '200':
+          description: Preferences updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '400':
+          description: Invalid preferences
+        '401':
+          description: Not authenticated
+      security:
+        - OAuth2: [identity]
+
+  # User Trophies
+  /api/v1/user/{username}/trophies:
+    get:
+      tags: [Users]
+      summary: Get user trophies
+      description: Get trophies for a specific user
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: Reddit username
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trophies retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                    example: "TrophyList"
+                  data:
+                    type: object
+                    properties:
+                      trophies:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Trophy'
+        '404':
+          description: User not found
+      security:
+        - OAuth2: [read]
+
+  # Search
+  /search:
+    get:
+      tags: [Search]
+      summary: Search Reddit content
+      description: Search for submissions, subreddits, or users
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query
+          schema:
+            type: string
+            example: "python programming"
+        - name: type
+          in: query
+          description: Type of content to search
+          schema:
+            type: string
+            enum: [sr, sr_name, user, link]
+            default: link
+        - name: sort
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [relevance, hot, top, new, comments]
+            default: relevance
+        - name: t
+          in: query
+          description: Time period for sorting
+          schema:
+            type: string
+            enum: [hour, day, week, month, year, all]
+            default: all
+        - name: limit
+          in: query
+          description: Number of results
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: after
+          in: query
+          description: Fullname for pagination
+          schema:
+            type: string
+        - name: before
+          in: query
+          description: Fullname for pagination
+          schema:
+            type: string
+        - name: restrict_sr
+          in: query
+          description: Restrict search to specific subreddit
+          schema:
+            type: boolean
+        - name: include_over_18
+          in: query
+          description: Include NSFW results
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Search results retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+        '400':
+          description: Invalid search parameters
+      security:
+        - OAuth2: [read]
+        - ApiKeyAuth: []
+
+  # Private Messages
+  /message/inbox:
+    get:
+      tags: [Messages]
+      summary: Get inbox messages
+      description: Get private messages in the user's inbox
+      parameters:
+        - name: mark
+          in: query
+          description: Mark messages as read
+          schema:
+            type: boolean
+            default: false
+        - name: limit
+          in: query
+          description: Number of messages
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: after
+          in: query
+          description: Fullname for pagination
+          schema:
+            type: string
+        - name: before
+          in: query
+          description: Fullname for pagination
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+        '401':
+          description: Not authenticated
+      security:
+        - OAuth2: [privatemessages]
+
+  /api/compose:
+    post:
+      tags: [Messages]
+      summary: Send private message
+      description: Send a private message to another user
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                to:
+                  type: string
+                  description: Username of recipient
+                  example: "spez"
+                subject:
+                  type: string
+                  description: Message subject
+                  maxLength: 100
+                text:
+                  type: string
+                  description: Message body (Markdown supported)
+                from_sr:
+                  type: string
+                  description: Subreddit to send from (for moderator mail)
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [to, subject, text]
+      responses:
+        '200':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Invalid message parameters
+        '403':
+          description: Cannot send message to this user
+      security:
+        - OAuth2: [privatemessages]
+
+  # Moderation
+  /api/approve:
+    post:
+      tags: [Moderation]
+      summary: Approve content
+      description: Approve a submission or comment
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Fullname of item to approve
+                  example: "t3_abc123"
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [id]
+      responses:
+        '200':
+          description: Content approved successfully
+        '403':
+          description: Insufficient moderation privileges
+      security:
+        - OAuth2: [modposts]
+
+  /api/remove:
+    post:
+      tags: [Moderation]
+      summary: Remove content
+      description: Remove a submission or comment
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Fullname of item to remove
+                  example: "t3_abc123"
+                spam:
+                  type: boolean
+                  description: Mark as spam
+                  default: false
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [id]
+      responses:
+        '200':
+          description: Content removed successfully
+        '403':
+          description: Insufficient moderation privileges
+      security:
+        - OAuth2: [modposts]
+
+  /api/distinguish:
+    post:
+      tags: [Moderation]
+      summary: Distinguish content
+      description: Distinguish a comment or submission as moderator/admin
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Fullname of item to distinguish
+                  example: "t1_def456"
+                how:
+                  type: string
+                  enum: [yes, no, admin, special]
+                  description: How to distinguish the item
+                sticky:
+                  type: boolean
+                  description: Sticky the comment (moderator comments only)
+                  default: false
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [id, how]
+      responses:
+        '200':
+          description: Content distinguished successfully
+        '403':
+          description: Insufficient privileges
+      security:
+        - OAuth2: [modposts]
+
+  # Wiki
+  /r/{subreddit}/wiki/{page}:
+    get:
+      tags: [Wiki]
+      summary: Get wiki page
+      description: Get the content of a wiki page
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          description: Subreddit name
+          schema:
+            type: string
+        - name: page
+          in: path
+          required: true
+          description: Wiki page name
+          schema:
+            type: string
+            example: "index"
+        - name: v
+          in: query
+          description: Specific revision ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Wiki page retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiPage'
+        '403':
+          description: Page is private or restricted
+        '404':
+          description: Page not found
+      security:
+        - OAuth2: [wikiread]
+        - ApiKeyAuth: []
+
+  /r/{subreddit}/api/wiki/edit:
+    post:
+      tags: [Wiki]
+      summary: Edit wiki page
+      description: Create or edit a wiki page
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          description: Subreddit name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: string
+                  description: Wiki page name
+                  example: "index"
+                content:
+                  type: string
+                  description: Page content (Markdown supported)
+                reason:
+                  type: string
+                  description: Edit reason/summary
+                  maxLength: 256
+                previous:
+                  type: string
+                  description: Previous revision ID (for conflict detection)
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [page, content]
+      responses:
+        '200':
+          description: Wiki page edited successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '403':
+          description: Insufficient wiki permissions
+        '409':
+          description: Edit conflict
+      security:
+        - OAuth2: [wikiedit]
+
+  # Save/Unsave
+  /api/save:
+    post:
+      tags: [User Actions]
+      summary: Save content
+      description: Save a submission or comment
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Fullname of item to save
+                  example: "t3_abc123"
+                category:
+                  type: string
+                  description: Save category
+              required: [id]
+      responses:
+        '200':
+          description: Content saved successfully
+      security:
+        - OAuth2: [save]
+
+  /api/unsave:
+    post:
+      tags: [User Actions]
+      summary: Unsave content
+      description: Remove a submission or comment from saved items
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Fullname of item to unsave
+                  example: "t3_abc123"
+              required: [id]
+      responses:
+        '200':
+          description: Content unsaved successfully
+      security:
+        - OAuth2: [save]
+
+  # Subscribe/Unsubscribe
+  /api/subscribe:
+    post:
+      tags: [Subscriptions]
+      summary: Subscribe to subreddit
+      description: Subscribe or unsubscribe from a subreddit
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum: [sub, unsub]
+                  description: Action to perform
+                sr_name:
+                  type: string
+                  description: Subreddit name (without /r/ prefix)
+                  example: "AskReddit"
+                sr:
+                  type: string
+                  description: Subreddit fullname (alternative to sr_name)
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [action]
+      responses:
+        '200':
+          description: Subscription updated successfully
+        '400':
+          description: Invalid parameters
+      security:
+        - OAuth2: [subscribe]
+
+  # Additional Listing Endpoints
+  /r/{subreddit}/hot:
+    get:
+      tags: [Subreddits]
+      summary: Get hot posts from subreddit
+      description: Retrieve hot (trending) posts from a specific subreddit
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "AskReddit"
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Hot posts listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+
+  /r/{subreddit}/new:
+    get:
+      tags: [Subreddits]
+      summary: Get new posts from subreddit  
+      description: Retrieve newest posts from a specific subreddit in chronological order
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "programming"
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: New posts listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+
+  /r/{subreddit}/top:
+    get:
+      tags: [Subreddits]
+      summary: Get top posts from subreddit
+      description: Retrieve top-rated posts from a specific subreddit with time filtering
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "science"
+        - name: t
+          in: query
+          description: Time period for top posts
+          schema:
+            type: string
+            enum: [hour, day, week, month, year, all]
+            default: day
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Top posts listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+
+  /r/{subreddit}/rising:
+    get:
+      tags: [Subreddits]
+      summary: Get rising posts from subreddit
+      description: Retrieve rapidly trending posts gaining traction
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "technology"
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Rising posts listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+
+  /r/{subreddit}/controversial:
+    get:
+      tags: [Subreddits]
+      summary: Get controversial posts from subreddit
+      description: Retrieve posts with high engagement but mixed reactions
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "politics"
+        - name: t
+          in: query
+          description: Time period for controversial posts
+          schema:
+            type: string
+            enum: [hour, day, week, month, year, all]
+            default: day
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Controversial posts listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+
+  # General Listings
+  /r/all:
+    get:
+      tags: [Subreddits]
+      summary: Get posts from all subreddits
+      description: Aggregate content from all public subreddits
+      parameters:
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: All subreddits posts listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+
+  /r/popular:
+    get:
+      tags: [Subreddits]
+      summary: Get popular posts
+      description: Retrieve popular posts filtered by location
+      parameters:
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+        - name: g
+          in: query
+          schema:
+            type: string
+          description: Geolocation filter (e.g., 'GLOBAL', 'US', 'GB')
+      responses:
+        '200':
+          description: Popular posts listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+
+  /best:
+    get:
+      tags: [Subreddits]
+      summary: Get personalized best posts
+      description: Returns personalized best content for authenticated users
+      parameters:
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Personalized best posts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+      security:
+        - OAuth2: [read]
+
+  # User Activity Endpoints
+  /user/{username}/submitted:
+    get:
+      tags: [Users]
+      summary: Get user's submitted posts
+      description: Retrieve posts submitted by a specific user
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "reddit_user"
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [hot, new, top, controversial]
+            default: new
+        - name: t
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week, month, year, all]
+          description: Time period for sorting
+      responses:
+        '200':
+          description: User's submitted posts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+
+  /user/{username}/comments:
+    get:
+      tags: [Users]
+      summary: Get user's comments
+      description: Retrieve comments made by a specific user
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "reddit_user"
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [hot, new, top, controversial]
+            default: new
+        - name: t
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week, month, year, all]
+          description: Time period for sorting
+      responses:
+        '200':
+          description: User's comments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+
+  # Karma and Additional User Endpoints  
+  /api/v1/me/karma:
+    get:
+      tags: [Users]
+      summary: Get karma breakdown by subreddit
+      description: Retrieve authenticated user's karma breakdown by subreddit
+      responses:
+        '200':
+          description: Karma breakdown
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                    example: "KarmaList"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        sr:
+                          type: string
+                          description: Subreddit name
+                        comment_karma:
+                          type: integer
+                        link_karma:
+                          type: integer
+      security:
+        - OAuth2: [identity]
+
+  # Additional Search Endpoints
+  /r/{subreddit}/search:
+    get:
+      tags: [Search]
+      summary: Search within a subreddit
+      description: Search for posts within a specific subreddit
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "programming"
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+          example: "python tutorial"
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [relevance, hot, top, new, comments]
+            default: relevance
+        - name: t
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week, month, year, all]
+          description: Time period for search
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Search results within subreddit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+
+  /subreddits/search:
+    get:
+      tags: [Search]
+      summary: Search for subreddits
+      description: Find subreddits matching search terms
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+          example: "machine learning"
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Subreddit search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+
+  # Additional Message Endpoints
+  /message/unread:
+    get:
+      tags: [Messages]
+      summary: Get unread messages
+      description: Retrieve only unread messages from inbox
+      parameters:
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Unread messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+      security:
+        - OAuth2: [privatemessages]
+
+  /message/sent:
+    get:
+      tags: [Messages]
+      summary: Get sent messages
+      description: Retrieve messages sent by the authenticated user
+      parameters:
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Sent messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+      security:
+        - OAuth2: [privatemessages]
+
+  /api/read_message:
+    post:
+      tags: [Messages]
+      summary: Mark messages as read
+      description: Mark one or more messages as read
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Comma-separated list of message fullnames
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [id]
+      responses:
+        '200':
+          description: Messages marked as read
+        '400':
+          description: Bad request - validation errors
+        '403':
+          description: Forbidden - insufficient permissions
+      security:
+        - OAuth2: [privatemessages]
+
+  # Additional Moderation Endpoints
+  /r/{subreddit}/about/modqueue:
+    get:
+      tags: [Moderation]
+      summary: Get moderation queue
+      description: Retrieve posts and comments requiring moderation attention
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "test"
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Moderation queue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+      security:
+        - OAuth2: [modposts]
+
+  /r/{subreddit}/about/reports:
+    get:
+      tags: [Moderation]
+      summary: Get reported content
+      description: Retrieve reported posts and comments
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "test"
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Reported content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+      security:
+        - OAuth2: [modposts]
+
+  /r/{subreddit}/about/moderators:
+    get:
+      tags: [Moderation]
+      summary: Get subreddit moderators
+      description: List moderators of a subreddit
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "test"
+      responses:
+        '200':
+          description: List of moderators
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                    example: "UserList"
+                  data:
+                    type: object
+                    properties:
+                      children:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            id:
+                              type: string
+                            mod_permissions:
+                              type: array
+                              items:
+                                type: string
+
+  # Flair Endpoints
+  /r/{subreddit}/api/flair:
+    post:
+      tags: [Moderation]
+      summary: Set user flair
+      description: Set or clear user flair in a subreddit
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Username to set flair for
+                text:
+                  type: string
+                  description: Flair text
+                css_class:
+                  type: string
+                  description: CSS class for flair
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [name]
+      responses:
+        '200':
+          description: Flair set successfully
+        '400':
+          description: Bad request - validation errors
+        '403':
+          description: Forbidden - insufficient permissions
+      security:
+        - OAuth2: [modflair]
+
+  /r/{subreddit}/api/flairlist:
+    get:
+      tags: [Moderation]
+      summary: Get flair list
+      description: Get list of users with flair in a subreddit
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Flair list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user:
+                          type: string
+                        flair_text:
+                          type: string
+                        flair_css_class:
+                          type: string
+      security:
+        - OAuth2: [modflair]
+
+  # Multireddit Endpoints
+  /api/multi/user/{username}/{multiname}:
+    get:
+      tags: [Users]
+      summary: Get multireddit
+      description: Get information about a multireddit
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: multiname
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Multireddit information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                    example: "LabeledMulti"
+                  data:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      description_md:
+                        type: string
+                      subreddits:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+      security:
+        - OAuth2: [read]
+
+  # Additional Wiki Endpoints
+  /r/{subreddit}/wiki/pages:
+    get:
+      tags: [Wiki]
+      summary: Get wiki page list
+      description: Get list of wiki pages in a subreddit
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of wiki pages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: string
+                      description: Wiki page name
+
+  /r/{subreddit}/wiki/revisions/{page}:
+    get:
+      tags: [Wiki]
+      summary: Get wiki page revisions
+      description: Get revision history for a wiki page
+      parameters:
+        - name: subreddit
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Before'
+      responses:
+        '200':
+          description: Wiki page revisions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+
+  # Friend/Block Endpoints
+  /api/friend:
+    post:
+      tags: [Users]
+      summary: Add friend
+      description: Add another user as a friend
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Username to add as friend
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [name]
+      responses:
+        '200':
+          description: Friend added successfully
+        '400':
+          description: Bad request - validation errors
+        '403':
+          description: Forbidden - insufficient permissions
+      security:
+        - OAuth2: [subscribe]
+
+  /api/unfriend:
+    post:
+      tags: [Users]
+      summary: Remove friend
+      description: Remove a user from friends list
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Username to remove from friends
+                type:
+                  type: string
+                  enum: [friend]
+                  default: friend
+                api_type:
+                  type: string
+                  enum: [json]
+                  default: json
+              required: [name]
+      responses:
+        '200':
+          description: Friend removed successfully
+        '400':
+          description: Bad request - validation errors
+        '403':
+          description: Forbidden - insufficient permissions
+      security:
+        - OAuth2: [subscribe]
+
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://www.reddit.com/api/v1/authorize
+          tokenUrl: https://www.reddit.com/api/v1/access_token
+          scopes:
+            identity: Access to account information
+            edit: Edit comments and submissions  
+            flair: Manage and assign user flair
+            history: Access to voting and comment history
+            modconfig: Manage subreddit configuration
+            modflair: Moderate subreddit flair
+            modlog: Access moderation log
+            modposts: Moderate posts and comments
+            modwiki: Moderate wiki pages
+            mysubreddits: Access to subscribed subreddits
+            privatemessages: Access to private messages
+            read: Read access to posts, comments, and subreddits
+            report: Report content
+            save: Save and hide posts and comments
+            submit: Submit posts and comments
+            subscribe: Subscribe to subreddits
+            vote: Vote on posts and comments
+            wikiedit: Edit wiki pages
+            wikiread: Read wiki pages
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: User-Agent
+      description: User-Agent string for identification (required for all requests)
+
+  schemas:
+    # Core Reddit Objects
+    Thing:
+      type: object
+      properties:
+        kind:
+          type: string
+          description: Object type (t1=comment, t2=account, t3=link, t4=message, t5=subreddit, t6=award)
+        data:
+          type: object
+          description: Object data
+
+    Listing:
+      allOf:
+        - $ref: '#/components/schemas/Thing'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                modhash:
+                  type: string
+                  description: Modhash for form submissions
+                dist:
+                  type: integer
+                  description: Number of items in listing
+                children:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Thing'
+                  description: List of child objects
+                after:
+                  type: string
+                  description: Fullname for next page
+                before:
+                  type: string
+                  description: Fullname for previous page
+
+    # Submission/Post
+    Link:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Submission ID
+        name:
+          type: string
+          description: Fullname (t3_{id})
+        title:
+          type: string
+          description: Submission title
+        author:
+          type: string
+          description: Author username
+        author_fullname:
+          type: string
+          description: Author fullname
+        subreddit:
+          type: string
+          description: Subreddit name
+        subreddit_id:
+          type: string
+          description: Subreddit ID
+        selftext:
+          type: string
+          description: Self post text content
+        selftext_html:
+          type: string
+          description: Self post HTML content
+        url:
+          type: string
+          description: Link URL
+        domain:
+          type: string
+          description: Link domain
+        thumbnail:
+          type: string
+          description: Thumbnail URL
+        score:
+          type: integer
+          description: Net score (upvotes - downvotes)
+        ups:
+          type: integer
+          description: Number of upvotes
+        downs:
+          type: integer
+          description: Number of downvotes
+        upvote_ratio:
+          type: number
+          description: Ratio of upvotes to total votes
+        num_comments:
+          type: integer
+          description: Number of comments
+        created:
+          type: number
+          description: Creation timestamp (Unix time)
+        created_utc:
+          type: number
+          description: Creation timestamp (Unix time UTC)
+        over_18:
+          type: boolean
+          description: NSFW flag
+        spoiler:
+          type: boolean
+          description: Spoiler flag
+        locked:
+          type: boolean
+          description: Locked for comments
+        archived:
+          type: boolean
+          description: Archived (no voting/commenting)
+        removed:
+          type: boolean
+          description: Removed by moderators
+        approved:
+          type: boolean
+          description: Approved by moderators
+        distinguished:
+          type: string
+          enum: [moderator, admin, special]
+          description: Distinguished status
+        stickied:
+          type: boolean
+          description: Stickied to subreddit
+        gilded:
+          type: integer
+          description: Number of Reddit Gold awards
+        total_awards_received:
+          type: integer
+          description: Total number of awards
+        likes:
+          type: boolean
+          description: User's vote (true=upvote, false=downvote, null=no vote)
+        saved:
+          type: boolean
+          description: Saved by user
+        hidden:
+          type: boolean
+          description: Hidden by user
+        permalink:
+          type: string
+          description: Permalink to submission
+
+    # Comment
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Comment ID
+        name:
+          type: string
+          description: Fullname (t1_{id})
+        author:
+          type: string
+          description: Author username
+        author_fullname:
+          type: string
+          description: Author fullname
+        subreddit:
+          type: string
+          description: Subreddit name
+        subreddit_id:
+          type: string
+          description: Subreddit ID
+        link_id:
+          type: string
+          description: Parent submission fullname
+        parent_id:
+          type: string
+          description: Parent comment fullname
+        body:
+          type: string
+          description: Comment text content
+        body_html:
+          type: string
+          description: Comment HTML content
+        score:
+          type: integer
+          description: Comment score
+        ups:
+          type: integer
+          description: Number of upvotes
+        downs:
+          type: integer
+          description: Number of downvotes
+        created:
+          type: number
+          description: Creation timestamp
+        created_utc:
+          type: number
+          description: Creation timestamp UTC
+        edited:
+          type: boolean
+          description: Whether comment was edited
+        distinguished:
+          type: string
+          enum: [moderator, admin, special]
+          description: Distinguished status
+        stickied:
+          type: boolean
+          description: Stickied comment
+        gilded:
+          type: integer
+          description: Number of awards
+        likes:
+          type: boolean
+          description: User's vote
+        saved:
+          type: boolean
+          description: Saved by user
+        replies:
+          $ref: '#/components/schemas/Listing'
+        depth:
+          type: integer
+          description: Comment thread depth
+        controversiality:
+          type: integer
+          description: Controversiality score
+        collapsed:
+          type: boolean
+          description: Comment is collapsed
+
+    # Subreddit
+    Subreddit:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Subreddit ID
+        name:
+          type: string
+          description: Fullname (t5_{id})
+        display_name:
+          type: string
+          description: Subreddit name
+        display_name_prefixed:
+          type: string
+          description: Prefixed name (r/subreddit)
+        title:
+          type: string
+          description: Subreddit title
+        description:
+          type: string
+          description: Sidebar description
+        description_html:
+          type: string
+          description: Sidebar description HTML
+        public_description:
+          type: string
+          description: Public description
+        subscribers:
+          type: integer
+          description: Subscriber count
+        accounts_active:
+          type: integer
+          description: Active user count
+        created:
+          type: number
+          description: Creation timestamp
+        created_utc:
+          type: number
+          description: Creation timestamp UTC
+        over18:
+          type: boolean
+          description: NSFW subreddit
+        lang:
+          type: string
+          description: Language code
+        url:
+          type: string
+          description: Subreddit URL
+        subreddit_type:
+          type: string
+          enum: [public, private, restricted, gold_restricted, gold_only, archived, employees_only, user]
+          description: Subreddit type
+        submission_type:
+          type: string
+          enum: [any, link, self]
+          description: Allowed submission types
+        user_is_subscriber:
+          type: boolean
+          description: Current user is subscribed
+        user_is_contributor:
+          type: boolean
+          description: Current user is approved submitter
+        user_is_moderator:
+          type: boolean
+          description: Current user is moderator
+        user_has_favorited:
+          type: boolean
+          description: Current user has favorited
+        icon_img:
+          type: string
+          description: Subreddit icon URL
+        banner_img:
+          type: string
+          description: Banner image URL
+        banner_background_image:
+          type: string
+          description: Banner background image URL
+        header_img:
+          type: string
+          description: Header image URL
+        community_icon:
+          type: string
+          description: Community icon URL
+
+    # Account/User
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Account ID
+        name:
+          type: string
+          description: Username
+        created:
+          type: number
+          description: Account creation timestamp
+        created_utc:
+          type: number
+          description: Account creation timestamp UTC
+        link_karma:
+          type: integer
+          description: Link karma points
+        comment_karma:
+          type: integer
+          description: Comment karma points
+        total_karma:
+          type: integer
+          description: Total karma points
+        is_gold:
+          type: boolean
+          description: Has Reddit Gold
+        is_mod:
+          type: boolean
+          description: Is a moderator somewhere
+        is_employee:
+          type: boolean
+          description: Is Reddit employee
+        has_verified_email:
+          type: boolean
+          description: Has verified email
+        icon_img:
+          type: string
+          description: Profile icon URL
+        snoovatar_img:
+          type: string
+          description: Snoovatar image URL
+        subreddit:
+          $ref: '#/components/schemas/Subreddit'
+        verified:
+          type: boolean
+          description: Account is verified
+        over_18:
+          type: boolean
+          description: Account allows NSFW content
+        is_suspended:
+          type: boolean
+          description: Account is suspended
+
+    # User Preferences
+    UserPreferences:
+      type: object
+      properties:
+        accept_pms:
+          type: string
+          enum: [everyone, whitelisted]
+          description: Who can send private messages
+        over_18:
+          type: boolean
+          description: Show NSFW content
+        lang:
+          type: string
+          description: Interface language
+        country_code:
+          type: string
+          description: Country code
+        default_comment_sort:
+          type: string
+          enum: [confidence, top, new, controversial, old, random, qa, live]
+          description: Default comment sort
+        num_comments:
+          type: integer
+          description: Number of comments to show
+        min_comment_score:
+          type: integer
+          description: Minimum comment score threshold
+        min_link_score:
+          type: integer
+          description: Minimum link score threshold
+        numsites:
+          type: integer
+          description: Number of links to show
+        media:
+          type: string
+          enum: [on, off, subreddit]
+          description: Media display setting
+        compress:
+          type: boolean
+          description: Compress links
+        show_stylesheets:
+          type: boolean
+          description: Show subreddit stylesheets
+        show_flair:
+          type: boolean
+          description: Show user flair
+        mark_messages_read:
+          type: boolean
+          description: Mark messages as read
+        monitor_mentions:
+          type: boolean
+          description: Monitor username mentions
+        enable_followers:
+          type: boolean
+          description: Allow followers
+        email_messages:
+          type: boolean
+          description: Email for private messages
+        email_digests:
+          type: boolean
+          description: Email digest notifications
+        nightmode:
+          type: boolean
+          description: Night mode preference
+
+    # Trophy
+    Trophy:
+      type: object
+      properties:
+        kind:
+          type: string
+          example: "t6"
+        data:
+          type: object
+          properties:
+            icon_70:
+              type: string
+              description: Trophy icon URL (70px)
+            icon_40:
+              type: string
+              description: Trophy icon URL (40px)
+            name:
+              type: string
+              description: Trophy name
+            description:
+              type: string
+              description: Trophy description
+            url:
+              type: string
+              description: Trophy URL
+            award_id:
+              type: string
+              description: Award ID
+
+    # Wiki Page
+    WikiPage:
+      type: object
+      properties:
+        kind:
+          type: string
+          example: "wikipage"
+        data:
+          type: object
+          properties:
+            content_md:
+              type: string
+              description: Page content in Markdown
+            content_html:
+              type: string
+              description: Page content in HTML
+            revision_id:
+              type: string
+              description: Current revision ID
+            revision_date:
+              type: number
+              description: Last revision timestamp
+            revision_by:
+              $ref: '#/components/schemas/Account'
+            may_revise:
+              type: boolean
+              description: User can edit this page
+
+    # API Responses
+    ApiResponse:
+      type: object
+      properties:
+        json:
+          type: object
+          properties:
+            errors:
+              type: array
+              items:
+                type: array
+                items:
+                  type: string
+              description: List of errors
+            data:
+              type: object
+              description: Response data
+
+    SubmissionResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            json:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      description: URL to the new submission
+                    id:
+                      type: string
+                      description: Submission ID
+                    name:
+                      type: string
+                      description: Submission fullname
+                    drafts_count:
+                      type: integer
+                      description: Number of saved drafts
+
+    CommentResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            json:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    things:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Thing'
+                      description: Created comment objects
+
+security:
+  - OAuth2: [read]
+
+tags:
+  - name: Submissions
+    description: Submit and manage posts
+  - name: Comments
+    description: Comment creation and management
+  - name: Voting
+    description: Upvote and downvote content
+  - name: Subreddits
+    description: Subreddit information and browsing
+  - name: Users
+    description: User profiles and account management
+  - name: Search
+    description: Content search and discovery
+  - name: Messages
+    description: Private messaging system
+  - name: Moderation
+    description: Content moderation tools
+  - name: Wiki
+    description: Wiki page management
+  - name: User Actions
+    description: Save, hide, and other user actions
+  - name: Subscriptions
+    description: Subreddit subscription management

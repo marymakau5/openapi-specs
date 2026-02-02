@@ -1,0 +1,1357 @@
+openapi: 3.0.3
+info:
+  title: TikTok Business APIs
+  description: TikTok Business API endpoints used by Late for content publishing, creator management, and analytics
+  version: 2.0.0
+  contact:
+    name: Late Support
+    url: https://getlate.dev
+servers:
+  - url: https://open.tiktokapis.com/v2
+    description: TikTok Open API
+  - url: https://www.tiktok.com/v2
+    description: TikTok OAuth
+
+components:
+  securitySchemes:
+    AccessToken:
+      type: http
+      scheme: bearer
+      bearerFormat: access_token
+  
+  schemas:
+    UserInfo:
+      type: object
+      properties:
+        open_id:
+          type: string
+          description: TikTok user ID
+        union_id:
+          type: string
+          description: Unique user identifier
+        avatar_url:
+          type: string
+          format: uri
+          description: User's profile picture
+        display_name:
+          type: string
+          description: User's display name
+        follower_count:
+          type: integer
+          description: Number of followers (requires user.info.stats scope)
+    
+    CreatorInfo:
+      type: object
+      properties:
+        creator_nickname:
+          type: string
+          description: Creator's display name
+        creator_username:
+          type: string
+          description: Creator's @username
+        creator_avatar_url:
+          type: string
+          format: uri
+        privacy_level_options:
+          type: array
+          items:
+            type: string
+            enum: [PUBLIC_TO_EVERYONE, MUTUAL_FOLLOW_FRIENDS, FOLLOWER_OF_CREATOR, SELF_ONLY]
+          description: Available privacy settings for this creator
+        max_video_post_duration_sec:
+          type: integer
+          description: Maximum allowed video duration in seconds
+        is_verified_user:
+          type: boolean
+          description: Whether creator has verification badge
+        can_post_more:
+          type: boolean
+          description: Whether creator can make more posts at this time
+        comment_disabled:
+          type: boolean
+          description: Comments disabled in app settings
+        duet_disabled:
+          type: boolean
+          description: Duets disabled in app settings
+        stitch_disabled:
+          type: boolean
+          description: Stitches disabled in app settings
+    
+    PostInfo:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Post caption/title (optional for videos, truncated to 90 chars for photos)
+        description:
+          type: string
+          description: Full description text (photos only, max 4000 characters)
+        privacy_level:
+          type: string
+          enum: [PUBLIC_TO_EVERYONE, MUTUAL_FOLLOW_FRIENDS, FOLLOWER_OF_CREATOR, SELF_ONLY]
+          description: Post privacy level (must be manually selected from creator options)
+        disable_comment:
+          type: boolean
+          default: true
+          description: Whether comments are disabled (defaults to true per UX guidelines)
+        disable_duet:
+          type: boolean
+          default: true
+          description: Whether duets are disabled (videos only)
+        disable_stitch:
+          type: boolean
+          default: true
+          description: Whether stitches are disabled (videos only)
+        video_cover_timestamp_ms:
+          type: integer
+          default: 1000
+          description: Video thumbnail timestamp in milliseconds
+        auto_add_music:
+          type: boolean
+          default: false
+          description: Whether TikTok can add background music
+        brand_content_toggle:
+          type: boolean
+          description: Mark as branded content (paid partnership)
+        brand_organic_toggle:
+          type: boolean
+          description: Mark as brand organic content
+        is_aigc:
+          type: boolean
+          description: Mark as AI-generated content
+        content_preview_confirmed:
+          type: boolean
+          description: User confirmed content preview (UX requirement)
+        express_consent_given:
+          type: boolean
+          description: User gave express consent (UX requirement)
+        music_usage_confirmed:
+          type: boolean
+          description: Music usage terms confirmed (videos only)
+        user_interaction_confirmed:
+          type: boolean
+          description: User interaction settings confirmed (videos only)
+    
+    SourceInfo:
+      oneOf:
+        - type: object
+          title: PullFromURL
+          properties:
+            source:
+              type: string
+              enum: [PULL_FROM_URL]
+            video_url:
+              type: string
+              format: uri
+              description: Public URL to video file (videos only)
+            photo_images:
+              type: array
+              items:
+                type: string
+                format: uri
+              description: Array of image URLs (photos only)
+            photo_cover_index:
+              type: integer
+              default: 0
+              description: Index of cover image for photo carousel
+        - type: object
+          title: FileUpload
+          properties:
+            source:
+              type: string
+              enum: [FILE_UPLOAD]
+            video_size:
+              type: integer
+              description: Total video file size in bytes
+            chunk_size:
+              type: integer
+              description: Chunk size for upload (5MB-64MB)
+            total_chunk_count:
+              type: integer
+              description: Total number of chunks to upload
+    
+    PublishResponse:
+      type: object
+      properties:
+        publish_id:
+          type: string
+          description: TikTok internal publish ID
+        upload_url:
+          type: string
+          format: uri
+          description: URL for FILE_UPLOAD method (returned when source is FILE_UPLOAD)
+    
+    PublishStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [PROCESSING_DOWNLOAD, PROCESSING_UPLOAD, PUBLISH_COMPLETE, FAILED, SEND_TO_USER_INBOX]
+          description: Current publishing status
+        fail_reason:
+          type: string
+          enum: [
+            auth_removed,
+            file_format_check_failed,
+            duration_check_failed, 
+            frame_rate_check_failed,
+            picture_size_check_failed,
+            video_pull_failed,
+            photo_pull_failed,
+            spam_risk_too_many_posts,
+            spam_risk_user_banned_from_posting,
+            spam_risk_text,
+            spam_risk,
+            internal,
+            publish_cancelled
+          ]
+          description: Failure reason if status is FAILED
+        publicly_available_post_id:
+          type: array
+          items:
+            type: string
+          description: Public post IDs (available when status is PUBLISH_COMPLETE)
+        share_url:
+          type: string
+          format: uri
+          description: Public URL to the published post
+    
+    Video:
+      type: object
+      properties:
+        id:
+          type: string
+          description: TikTok video ID
+        title:
+          type: string
+          description: Video title/caption
+        video_description:
+          type: string
+          description: Video description
+        create_time:
+          type: integer
+          description: Creation timestamp (Unix seconds)
+        cover_image_url:
+          type: string
+          format: uri
+          description: Video thumbnail URL
+        share_url:
+          type: string
+          format: uri
+          description: Public video URL
+        duration:
+          type: integer
+          description: Video duration in seconds (0 for photo posts)
+        height:
+          type: integer
+        width:
+          type: integer
+        like_count:
+          type: integer
+        comment_count:
+          type: integer
+        share_count:
+          type: integer
+        view_count:
+          type: integer
+    
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          default: bearer
+        expires_in:
+          type: integer
+          description: Token lifetime in seconds
+        refresh_token:
+          type: string
+        refresh_expires_in:
+          type: integer
+          description: Refresh token lifetime in seconds
+        scope:
+          type: string
+          description: Granted scopes
+        open_id:
+          type: string
+          description: User's open ID
+    
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            log_id:
+              type: string
+
+paths:
+  # OAuth Authorization
+  /auth/authorize:
+    get:
+      servers:
+        - url: https://www.tiktok.com/v2
+      summary: Get TikTok authorization URL
+      description: Redirect user to TikTok authorization page
+      parameters:
+        - name: client_key
+          in: query
+          required: true
+          schema:
+            type: string
+          description: TikTok App ID
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+          description: Redirect URI registered with app
+        - name: scope
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "user.info.basic,user.info.profile,user.info.stats,video.publish,video.upload,video.list"
+          description: Comma-separated list of permissions
+        - name: response_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [code]
+        - name: disable_auto_auth
+          in: query
+          schema:
+            type: string
+            enum: ["1"]
+          description: Disable automatic authorization
+        - name: state
+          in: query
+          schema:
+            type: string
+          description: CSRF protection state parameter
+      responses:
+        '302':
+          description: Redirect to authorization page
+
+  # OAuth Token Exchange
+  /oauth/token/:
+    post:
+      summary: Exchange authorization code for access token or refresh token
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                client_key:
+                  type: string
+                  description: TikTok App ID
+                client_secret:
+                  type: string
+                  description: TikTok App Secret
+                code:
+                  type: string
+                  description: Authorization code (for initial exchange)
+                redirect_uri:
+                  type: string
+                  format: uri
+                  description: Redirect URI (for initial exchange)
+                grant_type:
+                  type: string
+                  enum: [authorization_code, refresh_token]
+                refresh_token:
+                  type: string
+                  description: Refresh token (for token refresh)
+              required:
+                - client_key
+                - client_secret
+                - grant_type
+      responses:
+        '200':
+          description: Token response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # User Information
+  /user/info/:
+    post:
+      summary: Get user profile information
+      security:
+        - AccessToken: []
+      parameters:
+        - name: fields
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "open_id,union_id,avatar_url,display_name,follower_count"
+          description: Comma-separated list of user fields
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/UserInfo'
+        '400':
+          description: Invalid request or missing scopes
+
+  # Creator Information (UX Requirements)
+  /post/publish/creator_info/query/:
+    post:
+      summary: Get creator information for UX compliance
+      description: Required before showing TikTok posting interface to ensure UX compliance
+      security:
+        - AccessToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+      responses:
+        '200':
+          description: Creator information with UX requirements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CreatorInfo'
+        '403':
+          description: Creator not eligible or insufficient permissions
+
+  # Direct Post - Video
+  /post/publish/video/init/:
+    post:
+      summary: Initialize video post (Direct Post or Creator Inbox)
+      description: Publish video directly or send to Creator Inbox based on post_mode
+      security:
+        - AccessToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - post_info
+                - source_info
+              properties:
+                media_type:
+                  type: string
+                  enum: [VIDEO]
+                post_mode:
+                  type: string
+                  enum: [DIRECT_POST, MEDIA_UPLOAD]
+                  description: DIRECT_POST for immediate publishing, MEDIA_UPLOAD for Creator Inbox
+                post_info:
+                  $ref: '#/components/schemas/PostInfo'
+                source_info:
+                  $ref: '#/components/schemas/SourceInfo'
+      responses:
+        '200':
+          description: Video post initialization successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PublishResponse'
+        '400':
+          description: Invalid request or UX validation failed
+        '403':
+          description: Insufficient permissions or audit requirements not met
+
+  # Direct Post - Photo/Carousel
+  /post/publish/content/init/:
+    post:
+      summary: Initialize photo/carousel post (Direct Post or Creator Inbox)
+      description: Publish photos directly or send to Creator Inbox based on post_mode
+      security:
+        - AccessToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - post_info
+                - source_info
+                - media_type
+              properties:
+                media_type:
+                  type: string
+                  enum: [PHOTO]
+                post_mode:
+                  type: string
+                  enum: [DIRECT_POST, MEDIA_UPLOAD]
+                  description: DIRECT_POST for immediate publishing, MEDIA_UPLOAD for Creator Inbox
+                post_info:
+                  $ref: '#/components/schemas/PostInfo'
+                source_info:
+                  type: object
+                  properties:
+                    source:
+                      type: string
+                      enum: [PULL_FROM_URL]
+                    photo_images:
+                      type: array
+                      items:
+                        type: string
+                        format: uri
+                      description: Array of image URLs (up to 35 images)
+                    photo_cover_index:
+                      type: integer
+                      default: 0
+                      description: Index of cover image
+      responses:
+        '200':
+          description: Photo post initialization successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PublishResponse'
+
+  # Creator Inbox - Video Only
+  /post/publish/inbox/video/init/:
+    post:
+      summary: Send video to Creator Inbox as draft
+      description: Upload video to Creator Inbox for later publishing (draft mode)
+      security:
+        - AccessToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  title: PullFromURL
+                  properties:
+                    source_info:
+                      type: object
+                      properties:
+                        source:
+                          type: string
+                          enum: [PULL_FROM_URL]
+                        video_url:
+                          type: string
+                          format: uri
+                - type: object
+                  title: FileUpload
+                  properties:
+                    post_info:
+                      $ref: '#/components/schemas/PostInfo'
+                    source_info:
+                      type: object
+                      properties:
+                        source:
+                          type: string
+                          enum: [FILE_UPLOAD]
+                        video_size:
+                          type: integer
+                        chunk_size:
+                          type: integer
+                        total_chunk_count:
+                          type: integer
+                    post_mode:
+                      type: string
+                      enum: [MEDIA_UPLOAD]
+      responses:
+        '200':
+          description: Video sent to Creator Inbox
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      publish_id:
+                        type: string
+                      upload_url:
+                        type: string
+                        format: uri
+                      post_id:
+                        type: string
+
+  # Publish Status Check
+  /post/publish/status/fetch/:
+    post:
+      summary: Check publishing status
+      description: Poll the status of a video/photo upload
+      security:
+        - AccessToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - publish_id
+              properties:
+                publish_id:
+                  type: string
+                  description: Publish ID from init response
+      responses:
+        '200':
+          description: Status information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PublishStatus'
+
+  # Video List (Account Posts)
+  /video/list/:
+    post:
+      summary: Get user's published videos
+      security:
+        - AccessToken: []
+      parameters:
+        - name: fields
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "id,title,create_time,cover_image_url,share_url,video_description,duration,height,width,like_count,comment_count,share_count,view_count"
+        - name: max_count
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 10
+        - name: cursor
+          in: query
+          schema:
+            type: integer
+          description: Pagination cursor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+      responses:
+        '200':
+          description: List of user videos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      videos:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Video'
+                      cursor:
+                        type: integer
+                      has_more:
+                        type: boolean
+
+  # Video Analytics
+  /video/query/:
+    post:
+      summary: Get video analytics
+      security:
+        - AccessToken: []
+      parameters:
+        - name: fields
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "like_count,comment_count,share_count,view_count"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - filters
+              properties:
+                filters:
+                  type: object
+                  properties:
+                    video_ids:
+                      type: array
+                      items:
+                        type: string
+                      description: List of video IDs to query
+      responses:
+        '200':
+          description: Video analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      videos:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Video'
+
+  # Comments - Post Comment
+  /comment/publish/:
+    post:
+      summary: Post comment or reply to comment
+      description: TikTok comments API is write-only (cannot read existing comments)
+      security:
+        - AccessToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - video_id
+                - text
+              properties:
+                video_id:
+                  type: string
+                  description: TikTok video ID
+                text:
+                  type: string
+                  description: Comment text
+                reply_to_comment_id:
+                  type: string
+                  description: Parent comment ID (for replies)
+      responses:
+        '200':
+          description: Comment posted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      comment_id:
+                        type: string
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+
+  # Comments - Delete Comment
+  /comment/delete/:
+    post:
+      summary: Delete comment
+      security:
+        - AccessToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - video_id
+                - comment_id
+              properties:
+                video_id:
+                  type: string
+                comment_id:
+                  type: string
+      responses:
+        '200':
+          description: Comment deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+
+  # Research API - Video Query
+  /research/video/query/:
+    post:
+      summary: Query TikTok public content data (Research API)
+      description: Query videos with conditions like region, keywords, hashtags, etc.
+      security:
+        - AccessToken: []
+      parameters:
+        - name: fields
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "id,like_count,comment_count,share_count,view_count,create_time,username"
+          description: Comma-separated list of video fields to return
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+                - start_date
+                - end_date
+              properties:
+                query:
+                  type: object
+                  description: Query conditions with AND, OR, NOT operators
+                  properties:
+                    and:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          operation:
+                            type: string
+                            enum: [EQ, IN, GT, GTE, LT, LTE]
+                          field_name:
+                            type: string
+                            enum: [keyword, create_date, username, region_code, video_id, hashtag_name, music_id, effect_id, video_length]
+                          field_values:
+                            type: array
+                            items:
+                              type: string
+                    or:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          operation:
+                            type: string
+                            enum: [EQ, IN, GT, GTE, LT, LTE]
+                          field_name:
+                            type: string
+                            enum: [keyword, create_date, username, region_code, video_id, hashtag_name, music_id, effect_id, video_length]
+                          field_values:
+                            type: array
+                            items:
+                              type: string
+                    not:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          operation:
+                            type: string
+                            enum: [EQ, IN, GT, GTE, LT, LTE]
+                          field_name:
+                            type: string
+                            enum: [keyword, create_date, username, region_code, video_id, hashtag_name, music_id, effect_id, video_length]
+                          field_values:
+                            type: array
+                            items:
+                              type: string
+                max_count:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 10
+                cursor:
+                  type: integer
+                  default: 0
+                start_date:
+                  type: string
+                  pattern: '^[0-9]{8}$'
+                  example: "20220615"
+                  description: Start date in YYYYMMDD format
+                end_date:
+                  type: string
+                  pattern: '^[0-9]{8}$'
+                  example: "20220628"
+                  description: End date in YYYYMMDD format
+                is_random:
+                  type: boolean
+                  default: false
+                search_id:
+                  type: string
+                  description: Search ID for pagination (returned in previous response)
+      responses:
+        '200':
+          description: Video research data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      videos:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Video'
+                      cursor:
+                        type: integer
+                      has_more:
+                        type: boolean
+                      search_id:
+                        type: string
+                  error:
+                    $ref: '#/components/schemas/ErrorResponse'
+
+  # Research API - User Info
+  /research/user/info/:
+    post:
+      summary: Get public TikTok account information (Research API)
+      description: Query public TikTok account information by username
+      security:
+        - AccessToken: []
+      parameters:
+        - name: fields
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "display_name,bio_description,avatar_url,is_verified,follower_count,following_count,likes_count,video_count"
+          description: Comma-separated list of user fields to return
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+              properties:
+                username:
+                  type: string
+                  description: TikTok username (without @ symbol)
+      responses:
+        '200':
+          description: Public user information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      username:
+                        type: string
+                      display_name:
+                        type: string
+                      bio_description:
+                        type: string
+                      avatar_url:
+                        type: string
+                        format: uri
+                      is_verified:
+                        type: boolean
+                      follower_count:
+                        type: integer
+                      following_count:
+                        type: integer
+                      likes_count:
+                        type: integer
+                      video_count:
+                        type: integer
+                  error:
+                    $ref: '#/components/schemas/ErrorResponse'
+
+  # OAuth - Revoke Token
+  /oauth/revoke/:
+    post:
+      summary: Revoke access token
+      description: Revoke an access token and invalidate it
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - client_key
+                - token
+              properties:
+                client_key:
+                  type: string
+                  description: TikTok App ID
+                token:
+                  type: string
+                  description: Access token to revoke
+      responses:
+        '200':
+          description: Token revoked successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+
+  # Client Token Management (for Research API)
+  /oauth/client_credentials/:
+    post:
+      summary: Get client access token
+      description: Generate client access token for Research API
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - client_key
+                - client_secret
+                - grant_type
+              properties:
+                client_key:
+                  type: string
+                  description: TikTok App ID
+                client_secret:
+                  type: string
+                  description: TikTok App Secret
+                grant_type:
+                  type: string
+                  enum: [client_credentials]
+      responses:
+        '200':
+          description: Client token response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                    default: bearer
+                  expires_in:
+                    type: integer
+
+  # Display API - Profile Info (Extended)
+  /user/info/extended/:
+    post:
+      summary: Get extended user profile information (Display API)
+      description: Get extended user information including stats and profile details
+      security:
+        - AccessToken: []
+      parameters:
+        - name: fields
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "open_id,union_id,avatar_url,avatar_url_100,avatar_large_url,display_name,bio_description,profile_deep_link,is_verified,username,follower_count,following_count,likes_count,video_count"
+          description: Comma-separated list of user fields
+      responses:
+        '200':
+          description: Extended user information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          open_id:
+                            type: string
+                          union_id:
+                            type: string
+                          avatar_url:
+                            type: string
+                            format: uri
+                          avatar_url_100:
+                            type: string
+                            format: uri
+                          avatar_large_url:
+                            type: string
+                            format: uri
+                          display_name:
+                            type: string
+                          bio_description:
+                            type: string
+                          profile_deep_link:
+                            type: string
+                            format: uri
+                          is_verified:
+                            type: boolean
+                          username:
+                            type: string
+                          follower_count:
+                            type: integer
+                          following_count:
+                            type: integer
+                          likes_count:
+                            type: integer
+                          video_count:
+                            type: integer
+
+  # Creator Info Query (for UX compliance)
+  /post/publish/creator_info/query/:
+    get:
+      summary: Get creator information for UX compliance (alternative endpoint)
+      description: Alternative GET endpoint for creator information
+      security:
+        - AccessToken: []
+      responses:
+        '200':
+          description: Creator information with UX requirements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CreatorInfo'
+
+  # Share Kit - Direct Share to TikTok App
+  /share/video/:
+    post:
+      summary: Share video to TikTok app (Share Kit)
+      description: Share video content directly to TikTok mobile app
+      security:
+        - AccessToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - video_info
+                - share_info
+              properties:
+                video_info:
+                  type: object
+                  properties:
+                    video_url:
+                      type: string
+                      format: uri
+                    video_path:
+                      type: string
+                      description: Local video file path (mobile apps only)
+                share_info:
+                  type: object
+                  properties:
+                    hashtags:
+                      type: array
+                      items:
+                        type: string
+                      description: Array of hashtags (without # symbol)
+                    anchor_info:
+                      type: object
+                      description: Anchor/mention information
+                    micro_app_info:
+                      type: object
+                      description: Micro app information for attribution
+      responses:
+        '200':
+          description: Share initiated successfully
+        '400':
+          description: Invalid share parameters
+
+  # Video Embed Info
+  /video/embed/:
+    post:
+      summary: Get video embed information
+      description: Get embed links and metadata for TikTok videos
+      security:
+        - AccessToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - video_ids
+              properties:
+                video_ids:
+                  type: array
+                  items:
+                    type: string
+                  maxItems: 20
+                  description: Array of video IDs to get embed info for
+      responses:
+        '200':
+          description: Embed information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      videos:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            embed_link:
+                              type: string
+                              format: uri
+                            embed_html:
+                              type: string
+                            share_url:
+                              type: string
+                              format: uri
+
+  # Login Kit - User Token Info
+  /oauth/token/info/:
+    post:
+      summary: Get token information
+      description: Get information about an access token (scopes, expiry, etc.)
+      security:
+        - AccessToken: []
+      responses:
+        '200':
+          description: Token information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      scope:
+                        type: string
+                        description: Granted scopes
+                      expires_in:
+                        type: integer
+                        description: Seconds until token expires
+                      client_key:
+                        type: string
+                        description: Associated client key
+
+  # File Upload Endpoint (Dynamic URL)
+  # Note: This is returned by init endpoints when using FILE_UPLOAD method
+  # The actual URL is provided by TikTok and varies per upload
+  /{upload_url}:
+    put:
+      summary: Upload video file chunks
+      description: Upload video data using chunked upload (for FILE_UPLOAD method)
+      parameters:
+        - name: upload_url
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Dynamic upload URL provided by TikTok
+        - name: Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+            example: video/mp4
+        - name: Content-Length
+          in: header
+          required: true
+          schema:
+            type: integer
+        - name: Content-Range
+          in: header
+          required: true
+          schema:
+            type: string
+            example: "bytes 0-1023/2048"
+          description: Byte range for chunked uploads
+      requestBody:
+        required: true
+        content:
+          video/mp4:
+            schema:
+              type: string
+              format: binary
+          video/mov:
+            schema:
+              type: string
+              format: binary
+          video/webm:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '206':
+          description: Partial content uploaded (intermediate chunk)
+        '201':
+          description: Upload completed (final chunk)
+        '400':
+          description: Upload failed
+
+security:
+  - AccessToken: []
+
+tags:
+  - name: OAuth
+    description: Authentication and authorization
+  - name: User
+    description: User profile and creator information
+  - name: Publishing
+    description: Direct post and Creator Inbox content publishing
+  - name: Analytics
+    description: Video analytics and metrics
+  - name: Comments
+    description: Comment management (write-only)
+  - name: Upload
+    description: File upload operations
+  - name: Research
+    description: Research API for public content analysis
+  - name: Display
+    description: Display API for profile and video display
+  - name: Share
+    description: Share Kit for direct sharing to TikTok app
+
+externalDocs:
+  description: TikTok Content Sharing Guidelines (UX Requirements)
+  url: https://developers.tiktok.com/doc/content-sharing-guidelines

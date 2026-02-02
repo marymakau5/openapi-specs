@@ -1,0 +1,1864 @@
+openapi: 3.0.3
+info:
+  title: LinkedIn API
+  description: |
+    The LinkedIn Marketing Platform helps businesses grow by building technology to reach, engage, 
+    and convert professional audiences at scale. This comprehensive API covers:
+    
+    - **Posts & UGC**: Create and manage organic and sponsored posts
+    - **Media Upload**: Upload images, videos, and documents
+    - **Social Actions**: Comments, reactions, and engagement
+    - **Organizations**: Company page management
+    - **Analytics**: Performance metrics and insights
+    - **Community Management**: Comprehensive social media management
+    
+    **Base URL:** https://api.linkedin.com
+    **Required Headers:**
+    - `Linkedin-Version: YYYYMM` (e.g., 202501)
+    - `X-Restli-Protocol-Version: 2.0.0`
+  version: 2025.01
+  contact:
+    name: LinkedIn Developer Platform
+    url: https://learn.microsoft.com/en-us/linkedin/
+  license:
+    name: LinkedIn API Terms
+    url: https://legal.linkedin.com/api-terms-of-use
+servers:
+  - url: https://api.linkedin.com
+    description: LinkedIn API Production
+
+paths:
+  # Posts API
+  /rest/posts:
+    post:
+      tags: [Posts]
+      summary: Create a post
+      description: |
+        Create organic or sponsored posts with various content types including text, images, videos, 
+        documents, articles, carousels, polls, and multi-image posts.
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreateRequest'
+            examples:
+              text_post:
+                summary: Text-only post
+                value:
+                  author: "urn:li:organization:123456"
+                  commentary: "Sample text post content"
+                  visibility: "PUBLIC"
+                  distribution:
+                    feedDistribution: "MAIN_FEED"
+                    targetEntities: []
+                    thirdPartyDistributionChannels: []
+                  lifecycleState: "PUBLISHED"
+                  isReshareDisabledByAuthor: false
+              media_post:
+                summary: Post with video
+                value:
+                  author: "urn:li:organization:123456"
+                  commentary: "Check out this video!"
+                  visibility: "PUBLIC"
+                  distribution:
+                    feedDistribution: "MAIN_FEED"
+                    targetEntities: []
+                    thirdPartyDistributionChannels: []
+                  content:
+                    media:
+                      title: "My Video Title"
+                      id: "urn:li:video:C5F10AQGKQg_6y2a4sQ"
+                  lifecycleState: "PUBLISHED"
+                  isReshareDisabledByAuthor: false
+              article_post:
+                summary: Article post
+                value:
+                  author: "urn:li:organization:123456"
+                  commentary: "Read our latest article"
+                  visibility: "PUBLIC"
+                  distribution:
+                    feedDistribution: "MAIN_FEED"
+                    targetEntities: []
+                    thirdPartyDistributionChannels: []
+                  content:
+                    article:
+                      source: "https://example.com/article"
+                      thumbnail: "urn:li:image:C49klciosC89"
+                      title: "Article Title"
+                      description: "Article description"
+                  lifecycleState: "PUBLISHED"
+                  isReshareDisabledByAuthor: false
+      responses:
+        '201':
+          description: Post created successfully
+          headers:
+            x-restli-id:
+              description: The ID of the created post
+              schema:
+                type: string
+                example: "urn:li:share:6844785523593134080"
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Insufficient permissions
+      security:
+        - OAuth2: [w_organization_social, w_member_social]
+
+    get:
+      tags: [Posts]
+      summary: Find posts
+      description: Retrieve posts by author, account, or other criteria
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: q
+          in: query
+          required: true
+          description: Query type (author, dscAdAccount)
+          schema:
+            type: string
+            enum: [author, dscAdAccount]
+        - name: author
+          in: query
+          description: Author URN to filter posts
+          schema:
+            type: string
+            example: "urn:li:organization:123456"
+        - name: dscAdAccount
+          in: query
+          description: DSC Ad Account URN
+          schema:
+            type: string
+        - name: viewContext
+          in: query
+          description: View context for the posts
+          schema:
+            type: string
+            enum: [READER, AUTHOR]
+            default: READER
+        - name: start
+          in: query
+          description: Pagination start index
+          schema:
+            type: integer
+            default: 0
+        - name: count
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+        - name: sortBy
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [LAST_MODIFIED, CREATED]
+            default: LAST_MODIFIED
+      responses:
+        '200':
+          description: Posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostListResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [r_organization_social, r_member_social]
+
+  /rest/posts/{id}:
+    get:
+      tags: [Posts]
+      summary: Get post by ID
+      description: Retrieve a specific post by its URN
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: id
+          in: path
+          required: true
+          description: URL-encoded post URN (ugcPost or share)
+          schema:
+            type: string
+            example: "urn%3Ali%3AugcPost%3A123456"
+        - name: viewContext
+          in: query
+          description: View context for the post
+          schema:
+            type: string
+            enum: [READER, AUTHOR]
+            default: READER
+      responses:
+        '200':
+          description: Post retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '404':
+          description: Post not found
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [r_organization_social, r_member_social]
+
+    post:
+      tags: [Posts]
+      summary: Update post
+      description: Partially update a post (PATCH operation)
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - $ref: '#/components/parameters/RestliMethodPatch'
+        - name: id
+          in: path
+          required: true
+          description: URL-encoded post URN
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostUpdateRequest'
+            example:
+              patch:
+                $set:
+                  commentary: "Updated post content"
+                  contentCallToActionLabel: "LEARN_MORE"
+                adContext:
+                  $set:
+                    dscName: "Updated DSC name"
+      responses:
+        '204':
+          description: Post updated successfully
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Post not found
+      security:
+        - OAuth2: [w_organization_social, w_member_social]
+
+    delete:
+      tags: [Posts]
+      summary: Delete post
+      description: Delete a post by its URN
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: id
+          in: path
+          required: true
+          description: URL-encoded post URN
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Post deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Post not found
+      security:
+        - OAuth2: [w_organization_social, w_member_social]
+
+  # Batch Posts Operations
+  /rest/posts?ids=List({id1},{id2}):
+    get:
+      tags: [Posts]
+      summary: Batch get posts
+      description: Retrieve multiple posts in a single request
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - $ref: '#/components/parameters/RestliMethodBatchGet'
+        - name: ids
+          in: query
+          required: true
+          description: List of URL-encoded post URNs
+          schema:
+            type: string
+            example: "List(urn%3Ali%3AugcPost%3A123,urn%3Ali%3Ashare%3A456)"
+        - name: viewContext
+          in: query
+          schema:
+            type: string
+            enum: [READER, AUTHOR]
+            default: READER
+      responses:
+        '200':
+          description: Posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostBatchResponse'
+      security:
+        - OAuth2: [r_organization_social, r_member_social]
+
+  # Videos API
+  /rest/videos:
+    post:
+      tags: [Media]
+      summary: Initialize video upload
+      description: Initialize video upload and get upload instructions
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [initializeUpload]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                initializeUploadRequest:
+                  $ref: '#/components/schemas/VideoUploadInitRequest'
+            example:
+              initializeUploadRequest:
+                owner: "urn:li:organization:123456"
+                fileSizeBytes: 1055736
+                uploadCaptions: false
+                uploadThumbnail: false
+                mediaLibraryMetadata:
+                  associatedAccount: "urn:li:sponsoredAccount:789012"
+                  assetName: "My Video Asset"
+      responses:
+        '200':
+          description: Upload initialized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoUploadInitResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [w_organization_social, w_member_social]
+
+  /rest/videos/{id}:
+    get:
+      tags: [Media]
+      summary: Get video details
+      description: Retrieve details of a specific video
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: id
+          in: path
+          required: true
+          description: URL-encoded video URN
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Video details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+        '404':
+          description: Video not found
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [r_organization_social, r_member_social]
+
+  # Images API
+  /rest/images:
+    post:
+      tags: [Media]
+      summary: Initialize image upload
+      description: Initialize image upload and get upload instructions
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [initializeUpload]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                initializeUploadRequest:
+                  $ref: '#/components/schemas/ImageUploadInitRequest'
+            example:
+              initializeUploadRequest:
+                owner: "urn:li:organization:123456"
+                fileSizeBytes: 524288
+                mediaLibraryMetadata:
+                  associatedAccount: "urn:li:sponsoredAccount:789012"
+                  assetName: "My Image Asset"
+      responses:
+        '200':
+          description: Upload initialized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageUploadInitResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [w_organization_social, w_member_social]
+
+  /rest/images/{id}:
+    get:
+      tags: [Media]
+      summary: Get image details
+      description: Retrieve details of a specific image
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: id
+          in: path
+          required: true
+          description: URL-encoded image URN
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Image details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+        '404':
+          description: Image not found
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [r_organization_social, r_member_social]
+
+  # Comments API
+  /rest/socialActions/{entityId}/comments:
+    get:
+      tags: [Comments]
+      summary: Get comments
+      description: Retrieve comments for a post or other content
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: entityId
+          in: path
+          required: true
+          description: URL-encoded entity URN (post, share, or comment)
+          schema:
+            type: string
+        - name: start
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: count
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+      responses:
+        '200':
+          description: Comments retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentListResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [r_organization_social, r_member_social]
+
+    post:
+      tags: [Comments]
+      summary: Create comment
+      description: Add a comment to a post or reply to another comment
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: entityId
+          in: path
+          required: true
+          description: URL-encoded entity URN
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentCreateRequest'
+            examples:
+              text_comment:
+                summary: Text comment
+                value:
+                  actor: "urn:li:person:123456"
+                  object: "urn:li:activity:789012"
+                  message:
+                    text: "Great post!"
+              comment_with_image:
+                summary: Comment with image
+                value:
+                  actor: "urn:li:person:123456"
+                  object: "urn:li:activity:789012"
+                  message:
+                    text: "Check this out!"
+                  content:
+                    - entity:
+                        image: "urn:li:image:C552CAQGu16obsGZENQ"
+      responses:
+        '201':
+          description: Comment created successfully
+          headers:
+            x-restli-id:
+              description: The ID of the created comment
+              schema:
+                type: string
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [w_organization_social, w_member_social]
+
+  # Reactions API
+  /rest/reactions:
+    get:
+      tags: [Reactions]
+      summary: Get reactions
+      description: Retrieve reactions for content or check if user reacted
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: ids
+          in: query
+          description: List of (actor,entity) pairs
+          schema:
+            type: string
+            example: "List((actor:urn%3Ali%3Aperson%3A123,entity:urn%3Ali%3Ashare%3A456))"
+        - name: q
+          in: query
+          description: Query type
+          schema:
+            type: string
+            enum: [reactions]
+      responses:
+        '200':
+          description: Reactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReactionListResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [r_organization_social, r_member_social]
+
+    post:
+      tags: [Reactions]
+      summary: Add reaction
+      description: Add a reaction (like, love, etc.) to content
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReactionCreateRequest'
+            example:
+              actor: "urn:li:person:123456"
+              entity: "urn:li:share:789012"
+              reactionType: "LIKE"
+      responses:
+        '201':
+          description: Reaction added successfully
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [w_organization_social, w_member_social]
+
+    delete:
+      tags: [Reactions]
+      summary: Remove reaction
+      description: Remove a reaction from content
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: actor
+          in: query
+          required: true
+          description: Actor URN
+          schema:
+            type: string
+        - name: entity
+          in: query
+          required: true
+          description: Entity URN
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Reaction removed successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Reaction not found
+      security:
+        - OAuth2: [w_organization_social, w_member_social]
+
+  # Social Metadata API
+  /rest/socialMetadata/{entityId}:
+    get:
+      tags: [Social Metadata]
+      summary: Get social metadata
+      description: Get reaction summaries, comment counts, and other social metrics
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: entityId
+          in: path
+          required: true
+          description: URL-encoded entity URN
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Social metadata retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialMetadata'
+              example:
+                reactionSummaries:
+                  LIKE:
+                    reactionType: "LIKE"
+                    count: 15
+                  EMPATHY:
+                    reactionType: "EMPATHY"
+                    count: 3
+                commentsState: "OPEN"
+                commentSummary:
+                  count: 8
+                  topLevelCount: 5
+                entity: "urn:li:activity:123456789"
+        '401':
+          description: Unauthorized
+        '404':
+          description: Entity not found
+      security:
+        - OAuth2: [r_organization_social, r_member_social]
+
+    post:
+      tags: [Social Metadata]
+      summary: Update social metadata
+      description: Update social metadata settings (e.g., enable/disable comments)
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - $ref: '#/components/parameters/RestliMethodPatch'
+        - name: entityId
+          in: path
+          required: true
+          description: URL-encoded entity URN
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                patch:
+                  type: object
+                  properties:
+                    $set:
+                      type: object
+                      properties:
+                        commentsState:
+                          type: string
+                          enum: [OPEN, CLOSED]
+            example:
+              patch:
+                $set:
+                  commentsState: "CLOSED"
+      responses:
+        '204':
+          description: Social metadata updated successfully
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [w_organization_social, w_member_social]
+
+  # Organizations API
+  /rest/organizations:
+    get:
+      tags: [Organizations]
+      summary: Find organizations
+      description: Find organizations by search criteria
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: q
+          in: query
+          required: true
+          description: Query type
+          schema:
+            type: string
+            enum: [roleAssignee]
+        - name: roleAssignee
+          in: query
+          description: Person URN to find organizations for
+          schema:
+            type: string
+        - name: start
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: count
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Organizations found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationListResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [r_organization_social]
+
+  /rest/organizations/{id}:
+    get:
+      tags: [Organizations]
+      summary: Get organization
+      description: Get details of a specific organization
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: id
+          in: path
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Organization details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '404':
+          description: Organization not found
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [r_organization_social]
+
+  # Analytics APIs
+  /rest/organizationalEntityShareStatistics:
+    get:
+      tags: [Analytics]
+      summary: Get organization share statistics
+      description: Get analytics for organization posts and shares
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: q
+          in: query
+          required: true
+          description: Query type
+          schema:
+            type: string
+            enum: [organizationalEntity]
+        - name: organizationalEntity
+          in: query
+          required: true
+          description: Organization URN
+          schema:
+            type: string
+        - name: timeIntervals.timeGranularityType
+          in: query
+          description: Time granularity
+          schema:
+            type: string
+            enum: [DAY, MONTH]
+        - name: timeIntervals.timeRange.start
+          in: query
+          description: Start timestamp (milliseconds)
+          schema:
+            type: integer
+        - name: timeIntervals.timeRange.end
+          in: query
+          description: End timestamp (milliseconds)
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareStatisticsResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [r_organization_social]
+
+  /rest/organizationalEntityFollowerStatistics:
+    get:
+      tags: [Analytics]
+      summary: Get follower statistics
+      description: Get follower analytics for an organization
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: q
+          in: query
+          required: true
+          description: Query type
+          schema:
+            type: string
+            enum: [organizationalEntity]
+        - name: organizationalEntity
+          in: query
+          required: true
+          description: Organization URN
+          schema:
+            type: string
+        - name: timeIntervals.timeGranularityType
+          in: query
+          description: Time granularity
+          schema:
+            type: string
+            enum: [DAY, MONTH]
+        - name: timeIntervals.timeRange.start
+          in: query
+          description: Start timestamp (milliseconds)
+          schema:
+            type: integer
+        - name: timeIntervals.timeRange.end
+          in: query
+          description: End timestamp (milliseconds)
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Follower analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowerStatisticsResponse'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [r_organization_social]
+
+  # People API
+  /rest/people/(id:{personId}):
+    get:
+      tags: [People]
+      summary: Get person profile
+      description: Get the authenticated user's profile information
+      parameters:
+        - $ref: '#/components/parameters/LinkedinVersion'
+        - $ref: '#/components/parameters/RestliProtocolVersion'
+        - name: personId
+          in: path
+          required: true
+          description: Person identifier (usually "me" for current user)
+          schema:
+            type: string
+            example: me
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '401':
+          description: Unauthorized
+      security:
+        - OAuth2: [r_liteprofile, r_emailaddress]
+
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://www.linkedin.com/oauth/v2/authorization
+          tokenUrl: https://www.linkedin.com/oauth/v2/accessToken
+          scopes:
+            r_liteprofile: Read basic profile information
+            r_emailaddress: Read email address
+            w_member_social: Post, comment and like on behalf of an authenticated member
+            r_member_social: Retrieve posts, comments, and likes on behalf of an authenticated member
+            w_organization_social: Post, comment, and like on behalf of an organization
+            r_organization_social: Retrieve organization posts, comments, and likes
+            r_ads_reporting: Retrieve advertising campaign reports and insights
+
+  parameters:
+    LinkedinVersion:
+      name: Linkedin-Version
+      in: header
+      required: true
+      description: API version in YYYYMM format
+      schema:
+        type: string
+        example: "202501"
+
+    RestliProtocolVersion:
+      name: X-Restli-Protocol-Version
+      in: header
+      required: true
+      description: RestLi protocol version
+      schema:
+        type: string
+        enum: ["2.0.0"]
+
+    RestliMethodPatch:
+      name: X-RestLi-Method
+      in: header
+      required: true
+      description: RestLi method for PATCH operations
+      schema:
+        type: string
+        enum: [PARTIAL_UPDATE]
+
+    RestliMethodBatchGet:
+      name: X-RestLi-Method
+      in: header
+      required: true
+      description: RestLi method for batch operations
+      schema:
+        type: string
+        enum: [BATCH_GET]
+
+  schemas:
+    # Post schemas
+    PostCreateRequest:
+      type: object
+      required: [author, commentary, visibility, distribution, lifecycleState]
+      properties:
+        author:
+          type: string
+          description: Person or Organization URN
+          example: "urn:li:organization:123456"
+        commentary:
+          type: string
+          description: Post text content with little text formatting
+        visibility:
+          type: string
+          enum: [CONNECTIONS, PUBLIC, LOGGED_IN, CONTAINER]
+          description: Post visibility setting
+        distribution:
+          $ref: '#/components/schemas/Distribution'
+        lifecycleState:
+          type: string
+          enum: [PUBLISHED]
+          description: Post lifecycle state (only PUBLISHED supported for creation)
+        content:
+          $ref: '#/components/schemas/PostContent'
+        isReshareDisabledByAuthor:
+          type: boolean
+          default: false
+          description: Whether resharing is disabled
+        reshareContext:
+          $ref: '#/components/schemas/ReshareContext'
+        adContext:
+          $ref: '#/components/schemas/AdContext'
+        contentLandingPage:
+          type: string
+          format: uri
+          description: Landing page URL for content
+        contentCallToActionLabel:
+          type: string
+          enum: [APPLY, DOWNLOAD, VIEW_QUOTE, LEARN_MORE, SIGN_UP, SUBSCRIBE, REGISTER, JOIN, ATTEND, REQUEST_DEMO, SEE_MORE, BUY_NOW, SHOP_NOW]
+          description: Call-to-action button label
+
+    PostUpdateRequest:
+      type: object
+      properties:
+        patch:
+          type: object
+          properties:
+            $set:
+              type: object
+              properties:
+                commentary:
+                  type: string
+                contentCallToActionLabel:
+                  type: string
+                contentLandingPage:
+                  type: string
+                lifecycleState:
+                  type: string
+            adContext:
+              type: object
+              properties:
+                $set:
+                  type: object
+                  properties:
+                    dscName:
+                      type: string
+                    dscStatus:
+                      type: string
+                      enum: [ACTIVE, ARCHIVED]
+
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Post URN
+        author:
+          type: string
+          description: Author URN
+        commentary:
+          type: string
+          description: Post text content
+        visibility:
+          type: string
+          enum: [CONNECTIONS, PUBLIC, LOGGED_IN, CONTAINER]
+        distribution:
+          $ref: '#/components/schemas/Distribution'
+        content:
+          $ref: '#/components/schemas/PostContent'
+        lifecycleState:
+          type: string
+          enum: [DRAFT, PUBLISHED, PUBLISH_REQUESTED, PUBLISH_FAILED]
+        lifecycleStateInfo:
+          $ref: '#/components/schemas/LifecycleStateInfo'
+        isReshareDisabledByAuthor:
+          type: boolean
+        reshareContext:
+          $ref: '#/components/schemas/ReshareContext'
+        adContext:
+          $ref: '#/components/schemas/AdContext'
+        createdAt:
+          type: integer
+          format: int64
+          description: Creation timestamp in milliseconds
+        lastModifiedAt:
+          type: integer
+          format: int64
+          description: Last modification timestamp in milliseconds
+        publishedAt:
+          type: integer
+          format: int64
+          description: Publication timestamp in milliseconds
+        contentLandingPage:
+          type: string
+        contentCallToActionLabel:
+          type: string
+
+    PostListResponse:
+      type: object
+      properties:
+        paging:
+          $ref: '#/components/schemas/Paging'
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Post'
+
+    PostBatchResponse:
+      type: object
+      properties:
+        results:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Post'
+        statuses:
+          type: object
+        errors:
+          type: object
+
+    Distribution:
+      type: object
+      required: [feedDistribution]
+      properties:
+        feedDistribution:
+          type: string
+          enum: [NONE, MAIN_FEED]
+          description: Feed distribution setting
+        targetEntities:
+          type: array
+          items:
+            $ref: '#/components/schemas/TargetEntity'
+          description: Targeting criteria for organic posts
+        thirdPartyDistributionChannels:
+          type: array
+          items:
+            type: string
+          description: External distribution channels
+
+    TargetEntity:
+      type: object
+      properties:
+        degrees:
+          type: array
+          items:
+            type: string
+          description: Target degree URNs
+        fieldsOfStudy:
+          type: array
+          items:
+            type: string
+          description: Target field of study URNs
+        industries:
+          type: array
+          items:
+            type: string
+          description: Target industry URNs
+        interfaceLocales:
+          type: array
+          items:
+            type: string
+          description: Target locale URNs
+        jobFunctions:
+          type: array
+          items:
+            type: string
+          description: Target job function URNs
+        geoLocations:
+          type: array
+          items:
+            type: string
+          description: Target geographic location URNs
+        organizations:
+          type: array
+          items:
+            type: string
+          description: Target organization URNs
+        seniorities:
+          type: array
+          items:
+            type: string
+          description: Target seniority URNs
+        staffCountRanges:
+          type: array
+          items:
+            type: string
+            enum: [SIZE_1, SIZE_2_TO_10, SIZE_11_TO_50, SIZE_51_TO_200, SIZE_201_TO_500, SIZE_501_TO_1000, SIZE_1001_TO_5000, SIZE_5001_TO_10000, SIZE_10001_OR_MORE]
+          description: Target company size ranges
+
+    PostContent:
+      type: object
+      properties:
+        media:
+          $ref: '#/components/schemas/MediaContent'
+        poll:
+          $ref: '#/components/schemas/PollContent'
+        multiImage:
+          $ref: '#/components/schemas/MultiImageContent'
+        article:
+          $ref: '#/components/schemas/ArticleContent'
+        carousel:
+          $ref: '#/components/schemas/CarouselContent'
+        celebration:
+          $ref: '#/components/schemas/CelebrationContent'
+        reference:
+          $ref: '#/components/schemas/ReferenceContent'
+
+    MediaContent:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+          description: Media URN (image, video, or document)
+        title:
+          type: string
+          description: Media title (required for documents)
+        altText:
+          type: string
+          description: Alternative text for accessibility
+
+    ArticleContent:
+      type: object
+      required: [source, title, description]
+      properties:
+        source:
+          type: string
+          format: uri
+          description: Article source URL
+        thumbnail:
+          type: string
+          description: Thumbnail image URN
+        title:
+          type: string
+          description: Article title
+        description:
+          type: string
+          description: Article description
+
+    PollContent:
+      type: object
+      properties:
+        question:
+          type: string
+          description: Poll question
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                type: string
+          description: Poll options
+        settings:
+          type: object
+          properties:
+            duration:
+              type: string
+              description: Poll duration
+
+    MultiImageContent:
+      type: object
+      properties:
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Image URN
+              altText:
+                type: string
+                description: Alternative text
+
+    CarouselContent:
+      type: object
+      properties:
+        carouselCards:
+          type: array
+          items:
+            type: object
+            properties:
+              media:
+                $ref: '#/components/schemas/MediaContent'
+              landingPage:
+                type: string
+                format: uri
+
+    CelebrationContent:
+      type: object
+      properties:
+        celebration:
+          type: object
+          properties:
+            type:
+              type: string
+
+    ReferenceContent:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Reference URN (e.g., event)
+
+    ReshareContext:
+      type: object
+      properties:
+        parent:
+          type: string
+          description: Parent post URN being reshared
+        root:
+          type: string
+          description: Root post URN (read-only)
+          readOnly: true
+
+    AdContext:
+      type: object
+      properties:
+        isDsc:
+          type: boolean
+          description: Whether this is Direct Sponsored Content
+          readOnly: true
+        dscAdAccount:
+          type: string
+          description: DSC Ad Account URN
+        dscAdType:
+          type: string
+          enum: [VIDEO, STANDARD, CAROUSEL, JOB_POSTING, NATIVE_DOCUMENT, EVENT]
+          description: DSC content type
+          readOnly: true
+        dscStatus:
+          type: string
+          enum: [ACTIVE, ARCHIVED]
+          description: DSC status
+        dscName:
+          type: string
+          description: DSC name
+
+    LifecycleStateInfo:
+      type: object
+      properties:
+        isEditedByAuthor:
+          type: boolean
+          description: Whether post was edited by author
+        contentStatus:
+          type: string
+          enum: [PENDING, PROCESSING, FAILED]
+          description: Content processing status
+        reviewStatus:
+          type: string
+          enum: [PENDING, PROCESSING, FAILED]
+          description: Review status
+
+    # Media schemas
+    VideoUploadInitRequest:
+      type: object
+      required: [owner, fileSizeBytes]
+      properties:
+        owner:
+          type: string
+          description: Owner URN (organization or person)
+        fileSizeBytes:
+          type: integer
+          description: Video file size in bytes
+        uploadCaptions:
+          type: boolean
+          default: false
+        uploadThumbnail:
+          type: boolean
+          default: false
+        mediaLibraryMetadata:
+          $ref: '#/components/schemas/MediaLibraryMetadata'
+
+    VideoUploadInitResponse:
+      type: object
+      properties:
+        value:
+          type: object
+          properties:
+            uploadInstructions:
+              type: array
+              items:
+                $ref: '#/components/schemas/UploadInstruction'
+            video:
+              type: string
+              description: Video URN
+
+    ImageUploadInitRequest:
+      type: object
+      required: [owner, fileSizeBytes]
+      properties:
+        owner:
+          type: string
+          description: Owner URN (organization or person)
+        fileSizeBytes:
+          type: integer
+          description: Image file size in bytes
+        mediaLibraryMetadata:
+          $ref: '#/components/schemas/MediaLibraryMetadata'
+
+    ImageUploadInitResponse:
+      type: object
+      properties:
+        value:
+          type: object
+          properties:
+            uploadInstructions:
+              type: array
+              items:
+                $ref: '#/components/schemas/UploadInstruction'
+            image:
+              type: string
+              description: Image URN
+
+    MediaLibraryMetadata:
+      type: object
+      properties:
+        associatedAccount:
+          type: string
+          description: Associated sponsored account URN
+        assetName:
+          type: string
+          description: Asset name for media library
+
+    UploadInstruction:
+      type: object
+      properties:
+        uploadUrl:
+          type: string
+          format: uri
+          description: URL for uploading the media file
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: HTTP headers required for upload
+
+    Video:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Video URN
+        owner:
+          type: string
+          description: Owner URN
+        status:
+          type: string
+          enum: [PROCESSING, READY, FAILED]
+          description: Video processing status
+        downloadUrl:
+          type: string
+          format: uri
+          description: Download URL for processed video
+        duration:
+          type: integer
+          description: Video duration in milliseconds
+
+    Image:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Image URN
+        owner:
+          type: string
+          description: Owner URN
+        status:
+          type: string
+          enum: [PROCESSING, READY, FAILED]
+          description: Image processing status
+        downloadUrl:
+          type: string
+          format: uri
+          description: Download URL for processed image
+
+    # Comment schemas
+    CommentCreateRequest:
+      type: object
+      required: [actor, object, message]
+      properties:
+        actor:
+          type: string
+          description: Actor URN (person or organization)
+        object:
+          type: string
+          description: Target entity URN (post, share, or comment)
+        message:
+          type: object
+          required: [text]
+          properties:
+            text:
+              type: string
+              description: Comment text content
+        content:
+          type: array
+          items:
+            type: object
+            properties:
+              entity:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    description: Image URN for comment attachment
+          description: Comment attachments
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Comment URN
+        actor:
+          type: string
+          description: Author URN
+        object:
+          type: string
+          description: Target entity URN
+        message:
+          type: object
+          properties:
+            text:
+              type: string
+        content:
+          type: array
+          items:
+            type: object
+        created:
+          type: object
+          properties:
+            time:
+              type: integer
+              format: int64
+              description: Creation timestamp
+        lastModified:
+          type: object
+          properties:
+            time:
+              type: integer
+              format: int64
+              description: Last modification timestamp
+
+    CommentListResponse:
+      type: object
+      properties:
+        paging:
+          $ref: '#/components/schemas/Paging'
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+
+    # Reaction schemas
+    ReactionCreateRequest:
+      type: object
+      required: [actor, entity, reactionType]
+      properties:
+        actor:
+          type: string
+          description: Actor URN (person or organization)
+        entity:
+          type: string
+          description: Target entity URN (post, share, or comment)
+        reactionType:
+          type: string
+          enum: [LIKE, PRAISE, EMPATHY, INTEREST, ENTERTAINMENT, FUNNY]
+          description: Type of reaction
+
+    Reaction:
+      type: object
+      properties:
+        actor:
+          type: string
+          description: Actor URN
+        entity:
+          type: string
+          description: Target entity URN
+        reactionType:
+          type: string
+          enum: [LIKE, PRAISE, EMPATHY, INTEREST, ENTERTAINMENT, FUNNY]
+        created:
+          type: object
+          properties:
+            time:
+              type: integer
+              format: int64
+
+    ReactionListResponse:
+      type: object
+      properties:
+        results:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Reaction'
+        statuses:
+          type: object
+        errors:
+          type: object
+
+    # Social Metadata schemas
+    SocialMetadata:
+      type: object
+      properties:
+        entity:
+          type: string
+          description: Entity URN
+        reactionSummaries:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ReactionSummary'
+          description: Reaction counts by type
+        commentSummary:
+          $ref: '#/components/schemas/CommentSummary'
+        commentsState:
+          type: string
+          enum: [OPEN, CLOSED]
+          description: Whether comments are enabled
+
+    ReactionSummary:
+      type: object
+      properties:
+        reactionType:
+          type: string
+          enum: [LIKE, PRAISE, EMPATHY, INTEREST, ENTERTAINMENT, FUNNY]
+        count:
+          type: integer
+          description: Number of reactions of this type
+
+    CommentSummary:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: Total number of comments
+        topLevelCount:
+          type: integer
+          description: Number of top-level comments
+
+    # Organization schemas
+    Organization:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Organization ID
+        name:
+          type: string
+          description: Organization name
+        localizedName:
+          type: string
+          description: Localized organization name
+        description:
+          type: string
+          description: Organization description
+        website:
+          type: string
+          format: uri
+          description: Organization website
+        industry:
+          type: string
+          description: Industry
+        organizationType:
+          type: string
+          enum: [PUBLIC_COMPANY, EDUCATIONAL, SELF_EMPLOYED, GOVERNMENT_AGENCY, NON_PROFIT, SELF_OWNED, PRIVATELY_HELD, PARTNERSHIP]
+        logoV2:
+          type: object
+          properties:
+            original:
+              type: string
+              format: uri
+              description: Logo image URL
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizationLocation'
+
+    OrganizationLocation:
+      type: object
+      properties:
+        country:
+          type: string
+        geographicArea:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        description:
+          type: string
+        address:
+          type: object
+
+    OrganizationListResponse:
+      type: object
+      properties:
+        paging:
+          $ref: '#/components/schemas/Paging'
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Organization'
+
+    # Analytics schemas
+    ShareStatisticsResponse:
+      type: object
+      properties:
+        paging:
+          $ref: '#/components/schemas/Paging'
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShareStatistic'
+
+    ShareStatistic:
+      type: object
+      properties:
+        organizationalEntity:
+          type: string
+          description: Organization URN
+        totalShareStatistics:
+          $ref: '#/components/schemas/ShareStatisticData'
+        timeRange:
+          $ref: '#/components/schemas/TimeRange'
+
+    ShareStatisticData:
+      type: object
+      properties:
+        shareCount:
+          type: integer
+          description: Number of shares
+        impressionCount:
+          type: integer
+          description: Number of impressions
+        clickCount:
+          type: integer
+          description: Number of clicks
+        likeCount:
+          type: integer
+          description: Number of likes
+        commentCount:
+          type: integer
+          description: Number of comments
+        engagement:
+          type: number
+          description: Engagement rate
+
+    FollowerStatisticsResponse:
+      type: object
+      properties:
+        paging:
+          $ref: '#/components/schemas/Paging'
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/FollowerStatistic'
+
+    FollowerStatistic:
+      type: object
+      properties:
+        organizationalEntity:
+          type: string
+          description: Organization URN
+        followerCountsByAssociationType:
+          type: array
+          items:
+            $ref: '#/components/schemas/FollowerCountByAssociation'
+        timeRange:
+          $ref: '#/components/schemas/TimeRange'
+
+    FollowerCountByAssociation:
+      type: object
+      properties:
+        associationType:
+          type: string
+          enum: [ORGANIC, PAID]
+        followerCounts:
+          $ref: '#/components/schemas/FollowerCounts'
+
+    FollowerCounts:
+      type: object
+      properties:
+        organicFollowerCount:
+          type: integer
+        paidFollowerCount:
+          type: integer
+
+    TimeRange:
+      type: object
+      properties:
+        start:
+          type: integer
+          format: int64
+          description: Start timestamp in milliseconds
+        end:
+          type: integer
+          format: int64
+          description: End timestamp in milliseconds
+
+    # People schema
+    Person:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Person ID
+        firstName:
+          type: string
+          description: First name
+        lastName:
+          type: string
+          description: Last name
+        emailAddress:
+          type: string
+          format: email
+          description: Email address
+        profilePicture:
+          type: object
+          properties:
+            displayImage:
+              type: string
+              description: Profile picture URN
+
+    # Common schemas
+    Paging:
+      type: object
+      properties:
+        start:
+          type: integer
+          description: Start index for pagination
+        count:
+          type: integer
+          description: Number of items per page
+        total:
+          type: integer
+          description: Total number of items
+        links:
+          type: array
+          items:
+            type: object
+            properties:
+              rel:
+                type: string
+              href:
+                type: string
+
+security:
+  - OAuth2: []
+
+tags:
+  - name: Posts
+    description: Create and manage organic and sponsored posts
+  - name: Media
+    description: Upload and manage images, videos, and documents
+  - name: Comments
+    description: Comment management and engagement
+  - name: Reactions
+    description: Like and reaction management
+  - name: Social Metadata
+    description: Social metrics and metadata
+  - name: Organizations
+    description: Company page and organization management
+  - name: Analytics
+    description: Performance metrics and insights
+  - name: People
+    description: User profile information

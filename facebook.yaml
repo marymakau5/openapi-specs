@@ -1,0 +1,1396 @@
+openapi: 3.0.3
+info:
+  title: Facebook Graph API
+  version: "20.0"
+  description: |
+    The Graph API is the primary way for apps to read and write to the Facebook social graph.
+    All of our SDKs and products interact with the Graph API in some way, and our other APIs are extensions of the Graph API.
+    This specification focuses on Pages API, posts, photos, videos, stories, comments, and insights.
+  termsOfService: https://developers.facebook.com/terms/
+  contact:
+    name: Meta for Developers
+    url: https://developers.facebook.com/
+  license:
+    name: Meta Platform Terms
+    url: https://developers.facebook.com/terms/
+
+servers:
+  - url: https://graph.facebook.com/v20.0
+    description: Facebook Graph API v20.0
+
+security:
+  - facebook_auth: []
+
+paths:
+  # User/Me endpoints
+  /me:
+    get:
+      summary: Get current user
+      description: Returns information about the current user
+      tags: [User]
+      parameters:
+        - $ref: '#/components/parameters/fields_user'
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /me/accounts:
+    get:
+      summary: Get user pages
+      description: Returns pages managed by the current user
+      tags: [Pages]
+      parameters:
+        - $ref: '#/components/parameters/fields_page'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/after'
+      responses:
+        '200':
+          description: List of pages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Page'
+                  paging:
+                    $ref: '#/components/schemas/Paging'
+
+  # Page endpoints
+  /{page-id}:
+    get:
+      summary: Get page by ID
+      description: Returns information about a specific page
+      tags: [Pages]
+      parameters:
+        - $ref: '#/components/parameters/page_id'
+        - $ref: '#/components/parameters/fields_page'
+      responses:
+        '200':
+          description: Page information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+
+  /{page-id}/feed:
+    get:
+      summary: Get page feed
+      description: Returns posts published by the page and posts in which the page was tagged
+      tags: [Posts, Pages]
+      parameters:
+        - $ref: '#/components/parameters/page_id'
+        - $ref: '#/components/parameters/fields_post'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/since'
+        - $ref: '#/components/parameters/until'
+        - $ref: '#/components/parameters/after'
+      responses:
+        '200':
+          description: Page feed posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+                  paging:
+                    $ref: '#/components/schemas/Paging'
+    post:
+      summary: Create page post
+      description: Creates a new post on the page
+      tags: [Posts, Publishing]
+      parameters:
+        - $ref: '#/components/parameters/page_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostRequest'
+      responses:
+        '200':
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Post ID
+
+  /{page-id}/posts:
+    get:
+      summary: Get page posts
+      description: Returns posts published by the page
+      tags: [Posts, Pages]
+      parameters:
+        - $ref: '#/components/parameters/page_id'
+        - $ref: '#/components/parameters/fields_post'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/since'
+        - $ref: '#/components/parameters/until'
+        - $ref: '#/components/parameters/after'
+      responses:
+        '200':
+          description: Page posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+                  paging:
+                    $ref: '#/components/schemas/Paging'
+
+  /{page-id}/photos:
+    get:
+      summary: Get page photos
+      description: Returns photos uploaded by the page
+      tags: [Media, Pages]
+      parameters:
+        - $ref: '#/components/parameters/page_id'
+        - $ref: '#/components/parameters/fields_photo'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/after'
+      responses:
+        '200':
+          description: Page photos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Photo'
+                  paging:
+                    $ref: '#/components/schemas/Paging'
+    post:
+      summary: Upload photo
+      description: Uploads a photo to the page
+      tags: [Media, Publishing]
+      parameters:
+        - $ref: '#/components/parameters/page_id'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                source:
+                  type: string
+                  format: binary
+                  description: Photo file
+                url:
+                  type: string
+                  description: Photo URL (alternative to source)
+                message:
+                  type: string
+                  description: Photo caption
+                no_story:
+                  type: boolean
+                  description: Don't post to story
+                published:
+                  type: boolean
+                  description: Whether photo is published
+                  default: true
+      responses:
+        '200':
+          description: Photo uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Photo ID
+                  post_id:
+                    type: string
+                    description: Associated post ID
+
+  /{page-id}/videos:
+    get:
+      summary: Get page videos
+      description: Returns videos uploaded by the page
+      tags: [Media, Pages]
+      parameters:
+        - $ref: '#/components/parameters/page_id'
+        - $ref: '#/components/parameters/fields_video'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/after'
+      responses:
+        '200':
+          description: Page videos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Video'
+                  paging:
+                    $ref: '#/components/schemas/Paging'
+    post:
+      summary: Upload video
+      description: Uploads a video to the page
+      tags: [Media, Publishing]
+      parameters:
+        - $ref: '#/components/parameters/page_id'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                source:
+                  type: string
+                  format: binary
+                  description: Video file
+                file_url:
+                  type: string
+                  description: Video URL (alternative to source)
+                title:
+                  type: string
+                  description: Video title
+                description:
+                  type: string
+                  description: Video description
+                published:
+                  type: boolean
+                  description: Whether video is published
+                  default: true
+                thumb:
+                  type: string
+                  format: binary
+                  description: Custom thumbnail
+      responses:
+        '200':
+          description: Video uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Video ID
+
+  # Post endpoints
+  /{post-id}:
+    get:
+      summary: Get post by ID
+      description: Returns information about a specific post
+      tags: [Posts]
+      parameters:
+        - $ref: '#/components/parameters/post_id'
+        - $ref: '#/components/parameters/fields_post'
+      responses:
+        '200':
+          description: Post information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+    delete:
+      summary: Delete post
+      description: Deletes a post
+      tags: [Posts]
+      parameters:
+        - $ref: '#/components/parameters/post_id'
+      responses:
+        '200':
+          description: Post deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /{post-id}/comments:
+    get:
+      summary: Get post comments
+      description: Returns comments on a post
+      tags: [Comments]
+      parameters:
+        - $ref: '#/components/parameters/post_id'
+        - $ref: '#/components/parameters/fields_comment'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/after'
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [chronological, reverse_chronological]
+            default: chronological
+          description: Comment ordering
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [stream, toplevel]
+            default: toplevel
+          description: Comment filtering
+      responses:
+        '200':
+          description: Post comments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  paging:
+                    $ref: '#/components/schemas/Paging'
+    post:
+      summary: Comment on post
+      description: Creates a comment on a post
+      tags: [Comments]
+      parameters:
+        - $ref: '#/components/parameters/post_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  description: Comment text
+                attachment_url:
+                  type: string
+                  description: URL to attach
+                attachment_share_url:
+                  type: string
+                  description: Share URL to attach
+                source:
+                  type: string
+                  format: binary
+                  description: Photo/video attachment
+      responses:
+        '200':
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Comment ID
+
+  /{post-id}/likes:
+    get:
+      summary: Get post likes
+      description: Returns users who liked a post
+      tags: [Likes]
+      parameters:
+        - $ref: '#/components/parameters/post_id'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/after'
+      responses:
+        '200':
+          description: Post likes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  paging:
+                    $ref: '#/components/schemas/Paging'
+    post:
+      summary: Like post
+      description: Likes a post
+      tags: [Likes]
+      parameters:
+        - $ref: '#/components/parameters/post_id'
+      responses:
+        '200':
+          description: Post liked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+    delete:
+      summary: Unlike post
+      description: Removes like from a post
+      tags: [Likes]
+      parameters:
+        - $ref: '#/components/parameters/post_id'
+      responses:
+        '200':
+          description: Post unliked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  # Comment endpoints
+  /{comment-id}:
+    get:
+      summary: Get comment by ID
+      description: Returns information about a specific comment
+      tags: [Comments]
+      parameters:
+        - $ref: '#/components/parameters/comment_id'
+        - $ref: '#/components/parameters/fields_comment'
+      responses:
+        '200':
+          description: Comment information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+    delete:
+      summary: Delete comment
+      description: Deletes a comment
+      tags: [Comments]
+      parameters:
+        - $ref: '#/components/parameters/comment_id'
+      responses:
+        '200':
+          description: Comment deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /{comment-id}/comments:
+    get:
+      summary: Get comment replies
+      description: Returns replies to a comment
+      tags: [Comments]
+      parameters:
+        - $ref: '#/components/parameters/comment_id'
+        - $ref: '#/components/parameters/fields_comment'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/after'
+      responses:
+        '200':
+          description: Comment replies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  paging:
+                    $ref: '#/components/schemas/Paging'
+    post:
+      summary: Reply to comment
+      description: Creates a reply to a comment
+      tags: [Comments]
+      parameters:
+        - $ref: '#/components/parameters/comment_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  description: Reply text
+      responses:
+        '200':
+          description: Reply created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Reply ID
+
+  # Insights endpoints
+  /{page-id}/insights:
+    get:
+      summary: Get page insights
+      description: Returns insights for a page
+      tags: [Insights, Pages]
+      parameters:
+        - $ref: '#/components/parameters/page_id'
+        - $ref: '#/components/parameters/metric'
+        - $ref: '#/components/parameters/period'
+        - $ref: '#/components/parameters/since'
+        - $ref: '#/components/parameters/until'
+        - name: date_preset
+          in: query
+          schema:
+            type: string
+            enum: [today, yesterday, this_week, last_week, this_month, last_month]
+          description: Predefined date range
+      responses:
+        '200':
+          description: Page insights
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Insight'
+                  paging:
+                    $ref: '#/components/schemas/Paging'
+
+  /{post-id}/insights:
+    get:
+      summary: Get post insights
+      description: Returns insights for a post
+      tags: [Insights, Posts]
+      parameters:
+        - $ref: '#/components/parameters/post_id'
+        - $ref: '#/components/parameters/metric'
+      responses:
+        '200':
+          description: Post insights
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Insight'
+
+  /{video-id}/insights:
+    get:
+      summary: Get video insights
+      description: Returns insights for a video
+      tags: [Insights, Media]
+      parameters:
+        - $ref: '#/components/parameters/video_id'
+        - $ref: '#/components/parameters/metric'
+        - $ref: '#/components/parameters/period'
+        - $ref: '#/components/parameters/since'
+        - $ref: '#/components/parameters/until'
+      responses:
+        '200':
+          description: Video insights
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Insight'
+
+  # Media endpoints
+  /{photo-id}:
+    get:
+      summary: Get photo by ID
+      description: Returns information about a specific photo
+      tags: [Media]
+      parameters:
+        - $ref: '#/components/parameters/photo_id'
+        - $ref: '#/components/parameters/fields_photo'
+      responses:
+        '200':
+          description: Photo information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+    delete:
+      summary: Delete photo
+      description: Deletes a photo
+      tags: [Media]
+      parameters:
+        - $ref: '#/components/parameters/photo_id'
+      responses:
+        '200':
+          description: Photo deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /{video-id}:
+    get:
+      summary: Get video by ID
+      description: Returns information about a specific video
+      tags: [Media]
+      parameters:
+        - $ref: '#/components/parameters/video_id'
+        - $ref: '#/components/parameters/fields_video'
+      responses:
+        '200':
+          description: Video information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+    delete:
+      summary: Delete video
+      description: Deletes a video
+      tags: [Media]
+      parameters:
+        - $ref: '#/components/parameters/video_id'
+      responses:
+        '200':
+          description: Video deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+components:
+  securitySchemes:
+    facebook_auth:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://www.facebook.com/v20.0/dialog/oauth
+          tokenUrl: https://graph.facebook.com/v20.0/oauth/access_token
+          scopes:
+            public_profile: Access basic profile information
+            pages_show_list: Access list of pages
+            pages_read_engagement: Read page engagement
+            pages_manage_posts: Manage page posts
+            pages_manage_metadata: Manage page metadata
+            pages_read_user_content: Read user-generated content on pages
+            publish_to_groups: Publish to groups
+
+  parameters:
+    page_id:
+      name: page-id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Facebook Page ID
+
+    post_id:
+      name: post-id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Facebook Post ID
+
+    comment_id:
+      name: comment-id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Facebook Comment ID
+
+    photo_id:
+      name: photo-id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Facebook Photo ID
+
+    video_id:
+      name: video-id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Facebook Video ID
+
+    fields_user:
+      name: fields
+      in: query
+      schema:
+        type: string
+        default: "id,name"
+        example: "id,name,email,picture"
+      description: Comma-separated list of user fields
+
+    fields_page:
+      name: fields
+      in: query
+      schema:
+        type: string
+        default: "id,name"
+        example: "id,name,category,about,fan_count,access_token"
+      description: Comma-separated list of page fields
+
+    fields_post:
+      name: fields
+      in: query
+      schema:
+        type: string
+        default: "id,message,created_time"
+        example: "id,message,created_time,likes,comments,shares,attachments"
+      description: Comma-separated list of post fields
+
+    fields_comment:
+      name: fields
+      in: query
+      schema:
+        type: string
+        default: "id,message,created_time"
+        example: "id,message,created_time,from,like_count,comment_count"
+      description: Comma-separated list of comment fields
+
+    fields_photo:
+      name: fields
+      in: query
+      schema:
+        type: string
+        default: "id,source"
+        example: "id,source,name,created_time,height,width,likes,comments"
+      description: Comma-separated list of photo fields
+
+    fields_video:
+      name: fields
+      in: query
+      schema:
+        type: string
+        default: "id,source"
+        example: "id,source,title,description,created_time,length,views"
+      description: Comma-separated list of video fields
+
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 25
+        minimum: 1
+        maximum: 1000
+      description: Number of items to return
+
+    after:
+      name: after
+      in: query
+      schema:
+        type: string
+      description: Pagination cursor
+
+    since:
+      name: since
+      in: query
+      schema:
+        type: string
+        format: date-time
+      description: Start time for filtering
+
+    until:
+      name: until
+      in: query
+      schema:
+        type: string
+        format: date-time
+      description: End time for filtering
+
+    metric:
+      name: metric
+      in: query
+      required: true
+      schema:
+        type: string
+        example: "page_impressions,page_reach,page_views"
+      description: Comma-separated list of metrics
+
+    period:
+      name: period
+      in: query
+      schema:
+        type: string
+        enum: [day, week, days_28, month, lifetime]
+        default: day
+      description: Period for insights
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: User ID
+        name:
+          type: string
+          description: User's full name
+        email:
+          type: string
+          description: User's email
+        picture:
+          type: object
+          properties:
+            data:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: Profile picture URL
+                width:
+                  type: integer
+                height:
+                  type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+
+    Page:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Page ID
+        name:
+          type: string
+          description: Page name
+        category:
+          type: string
+          description: Page category
+        about:
+          type: string
+          description: Page about section
+        fan_count:
+          type: integer
+          description: Number of page likes
+        followers_count:
+          type: integer
+          description: Number of followers
+        access_token:
+          type: string
+          description: Page access token
+        website:
+          type: string
+          description: Page website
+        phone:
+          type: string
+          description: Page phone number
+        cover:
+          type: object
+          properties:
+            source:
+              type: string
+              description: Cover photo URL
+        picture:
+          type: object
+          properties:
+            data:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: Profile picture URL
+
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Post ID
+        message:
+          type: string
+          description: Post message
+        story:
+          type: string
+          description: Post story
+        created_time:
+          type: string
+          format: date-time
+          description: Post creation time
+        updated_time:
+          type: string
+          format: date-time
+          description: Post update time
+        from:
+          $ref: '#/components/schemas/User'
+        likes:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+            summary:
+              type: object
+              properties:
+                total_count:
+                  type: integer
+        comments:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Comment'
+            summary:
+              type: object
+              properties:
+                total_count:
+                  type: integer
+        shares:
+          type: object
+          properties:
+            count:
+              type: integer
+        reactions:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  type:
+                    type: string
+        attachments:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  media:
+                    type: object
+                    properties:
+                      image:
+                        type: object
+                        properties:
+                          src:
+                            type: string
+                      video:
+                        type: object
+                        properties:
+                          source:
+                            type: string
+        permalink_url:
+          type: string
+          description: Permanent URL to the post
+        full_picture:
+          type: string
+          description: Full-sized picture URL
+        picture:
+          type: string
+          description: Picture URL
+        link:
+          type: string
+          description: Link attached to post
+        name:
+          type: string
+          description: Link name
+        caption:
+          type: string
+          description: Link caption
+        description:
+          type: string
+          description: Link description
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Comment ID
+        message:
+          type: string
+          description: Comment message
+        created_time:
+          type: string
+          format: date-time
+          description: Comment creation time
+        from:
+          $ref: '#/components/schemas/User'
+        like_count:
+          type: integer
+          description: Number of likes on comment
+        comment_count:
+          type: integer
+          description: Number of replies
+        can_remove:
+          type: boolean
+          description: Whether comment can be removed
+        can_hide:
+          type: boolean
+          description: Whether comment can be hidden
+        can_like:
+          type: boolean
+          description: Whether comment can be liked
+        user_likes:
+          type: boolean
+          description: Whether current user liked the comment
+        parent:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Parent comment ID
+        attachment:
+          type: object
+          properties:
+            media:
+              type: object
+              properties:
+                image:
+                  type: object
+                  properties:
+                    src:
+                      type: string
+        comments:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Comment'
+            summary:
+              type: object
+              properties:
+                total_count:
+                  type: integer
+
+    Photo:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Photo ID
+        source:
+          type: string
+          description: Photo URL
+        name:
+          type: string
+          description: Photo name/caption
+        created_time:
+          type: string
+          format: date-time
+          description: Photo creation time
+        updated_time:
+          type: string
+          format: date-time
+        from:
+          $ref: '#/components/schemas/User'
+        height:
+          type: integer
+          description: Photo height
+        width:
+          type: integer
+          description: Photo width
+        link:
+          type: string
+          description: Permalink to photo
+        picture:
+          type: string
+          description: Small picture URL
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              source:
+                type: string
+              height:
+                type: integer
+              width:
+                type: integer
+        likes:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+            summary:
+              type: object
+              properties:
+                total_count:
+                  type: integer
+        comments:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Comment'
+            summary:
+              type: object
+              properties:
+                total_count:
+                  type: integer
+
+    Video:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Video ID
+        source:
+          type: string
+          description: Video URL
+        title:
+          type: string
+          description: Video title
+        description:
+          type: string
+          description: Video description
+        created_time:
+          type: string
+          format: date-time
+          description: Video creation time
+        updated_time:
+          type: string
+          format: date-time
+        from:
+          $ref: '#/components/schemas/User'
+        length:
+          type: number
+          description: Video length in seconds
+        permalink_url:
+          type: string
+          description: Permanent URL to video
+        picture:
+          type: string
+          description: Video thumbnail URL
+        format:
+          type: array
+          items:
+            type: object
+            properties:
+              embed_html:
+                type: string
+              filter:
+                type: string
+              height:
+                type: integer
+              picture:
+                type: string
+              width:
+                type: integer
+        views:
+          type: integer
+          description: Video view count
+        likes:
+          type: object
+          properties:
+            summary:
+              type: object
+              properties:
+                total_count:
+                  type: integer
+        comments:
+          type: object
+          properties:
+            summary:
+              type: object
+              properties:
+                total_count:
+                  type: integer
+
+    Insight:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Insight ID
+        name:
+          type: string
+          description: Metric name
+        period:
+          type: string
+          description: Time period
+        values:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: integer
+                description: Metric value
+              end_time:
+                type: string
+                format: date-time
+                description: End time for the metric period
+        title:
+          type: string
+          description: Metric title
+        description:
+          type: string
+          description: Metric description
+
+    CreatePostRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Post message
+        link:
+          type: string
+          description: Link to share
+        picture:
+          type: string
+          description: Picture URL
+        name:
+          type: string
+          description: Link name
+        caption:
+          type: string
+          description: Link caption
+        description:
+          type: string
+          description: Link description
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              link:
+                type: string
+        place:
+          type: string
+          description: Place ID for location tagging
+        tags:
+          type: string
+          description: Comma-separated list of user IDs to tag
+        object_attachment:
+          type: string
+          description: Facebook object ID for sharing
+        targeting:
+          type: object
+          description: Audience targeting options
+        feed_targeting:
+          type: object
+          description: News feed targeting
+        published:
+          type: boolean
+          description: Whether post is published
+          default: true
+        scheduled_publish_time:
+          type: integer
+          description: Unix timestamp for scheduled publishing
+        backdated_time:
+          type: string
+          format: date-time
+          description: Backdate time for post
+        backdated_time_granularity:
+          type: string
+          enum: [year, month, day, hour, min, none]
+          description: Granularity for backdated time
+        child_attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              link:
+                type: string
+              picture:
+                type: string
+              name:
+                type: string
+              description:
+                type: string
+
+    Paging:
+      type: object
+      properties:
+        cursors:
+          type: object
+          properties:
+            before:
+              type: string
+            after:
+              type: string
+        previous:
+          type: string
+        next:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+            type:
+              type: string
+            code:
+              type: integer
+            error_subcode:
+              type: integer
+            fbtrace_id:
+              type: string
+
+tags:
+  - name: User
+    description: User operations
+  - name: Pages
+    description: Page management
+  - name: Posts
+    description: Post operations
+  - name: Publishing
+    description: Content publishing
+  - name: Media
+    description: Media management
+  - name: Comments
+    description: Comment operations
+  - name: Likes
+    description: Like operations
+  - name: Insights
+    description: Analytics and insights

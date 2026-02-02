@@ -1,0 +1,3562 @@
+openapi: 3.0.3
+info:
+  title: YouTube Data API v3
+  description: |
+    The YouTube Data API v3 allows developers to access YouTube functionality via HTTP requests. 
+    You can retrieve, insert, update, and delete various YouTube resources like videos, playlists, 
+    channels, comments, captions, and more. The API supports both public and private content access.
+    
+    **Authentication:**
+    - API Key (for public data access)
+    - OAuth 2.0 (for user authentication and private data access)
+    
+    **Base URL:** https://www.googleapis.com/youtube/v3
+  version: "3"
+  contact:
+    name: Google Developers
+    url: https://developers.google.com/youtube/v3
+  license:
+    name: Google API Terms of Service
+    url: https://developers.google.com/terms
+servers:
+  - url: https://www.googleapis.com/youtube/v3
+    description: YouTube Data API v3
+
+paths:
+  # Activities
+  /activities:
+    get:
+      tags: [Activities]
+      summary: List channel activities
+      description: Returns a list of channel activity events that match the request criteria
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet,contentDetails"
+        - name: channelId
+          in: query
+          description: Channel ID to retrieve activities for
+          schema:
+            type: string
+        - name: home
+          in: query
+          description: Set to true to retrieve home activities
+          schema:
+            type: boolean
+        - name: mine
+          in: query
+          description: Set to true to retrieve authenticated user's activities
+          schema:
+            type: boolean
+        - name: maxResults
+          in: query
+          description: Maximum number of results (1-50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
+        - name: pageToken
+          in: query
+          description: Page token for pagination
+          schema:
+            type: string
+        - name: publishedAfter
+          in: query
+          description: Filter activities published after this date
+          schema:
+            type: string
+            format: date-time
+        - name: publishedBefore
+          in: query
+          description: Filter activities published before this date
+          schema:
+            type: string
+            format: date-time
+        - name: regionCode
+          in: query
+          description: Geographic region code
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityListResponse'
+      security:
+        - ApiKey: []
+        - OAuth2: [https://www.googleapis.com/auth/youtube.readonly]
+
+  # Captions
+  /captions:
+    get:
+      tags: [Captions]
+      summary: List caption tracks
+      description: Returns a list of caption tracks associated with a video
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet"
+        - name: videoId
+          in: query
+          required: true
+          description: Video ID to retrieve captions for
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: Comma-separated list of caption track IDs
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaptionListResponse'
+      security:
+        - ApiKey: []
+        - OAuth2: [https://www.googleapis.com/auth/youtube.readonly]
+
+    post:
+      tags: [Captions]
+      summary: Upload caption track
+      description: Uploads a caption track for a video
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+        - name: sync
+          in: query
+          description: Set to true to sync caption track
+          schema:
+            type: boolean
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Caption'
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                resource:
+                  $ref: '#/components/schemas/Caption'
+                media:
+                  type: string
+                  format: binary
+                  description: Caption file content
+      responses:
+        '200':
+          description: Caption track uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Caption'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube.force-ssl]
+
+    put:
+      tags: [Captions]
+      summary: Update caption track
+      description: Updates an existing caption track
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to update
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+        - name: sync
+          in: query
+          description: Set to true to sync caption track
+          schema:
+            type: boolean
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Caption'
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                resource:
+                  $ref: '#/components/schemas/Caption'
+                media:
+                  type: string
+                  format: binary
+                  description: Caption file content
+      responses:
+        '200':
+          description: Caption track updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Caption'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube.force-ssl]
+
+    delete:
+      tags: [Captions]
+      summary: Delete caption track
+      description: Deletes a caption track
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Caption track ID to delete
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Caption track deleted successfully
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube.force-ssl]
+
+  /captions/{id}:
+    get:
+      tags: [Captions]
+      summary: Download caption track
+      description: Downloads a caption track
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Caption track ID
+          schema:
+            type: string
+        - name: tfmt
+          in: query
+          description: Caption track format
+          schema:
+            type: string
+            enum: [sbv, scc, srt, ttml, vtt]
+        - name: tlang
+          in: query
+          description: Caption track language
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Caption track downloaded successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/ttml+xml:
+              schema:
+                type: string
+            text/vtt:
+              schema:
+                type: string
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube.force-ssl]
+
+  # Channels
+  /channels:
+    get:
+      tags: [Channels]
+      summary: List channels
+      description: Returns a collection of zero or more channel resources
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet,statistics,brandingSettings"
+        - name: categoryId
+          in: query
+          description: Channel category ID
+          schema:
+            type: string
+        - name: forHandle
+          in: query
+          description: Channel handle (without @)
+          schema:
+            type: string
+        - name: forUsername
+          in: query
+          description: Channel username
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: Comma-separated list of channel IDs
+          schema:
+            type: string
+        - name: managedByMe
+          in: query
+          description: Set to true to retrieve channels managed by authenticated user
+          schema:
+            type: boolean
+        - name: mine
+          in: query
+          description: Set to true to retrieve authenticated user's channel
+          schema:
+            type: boolean
+        - name: maxResults
+          in: query
+          description: Maximum number of results (1-50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
+        - name: pageToken
+          in: query
+          description: Page token for pagination
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelListResponse'
+      security:
+        - ApiKey: []
+        - OAuth2: [https://www.googleapis.com/auth/youtube.readonly]
+
+    put:
+      tags: [Channels]
+      summary: Update channel
+      description: Updates a channel's metadata
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to update
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Channel'
+      responses:
+        '200':
+          description: Channel updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+  # Channel Sections
+  /channelSections:
+    get:
+      tags: [Channel Sections]
+      summary: List channel sections
+      description: Returns channel sections that match the request criteria
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet,contentDetails"
+        - name: channelId
+          in: query
+          description: Channel ID to retrieve sections for
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: Comma-separated list of section IDs
+          schema:
+            type: string
+        - name: mine
+          in: query
+          description: Set to true to retrieve authenticated user's sections
+          schema:
+            type: boolean
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelSectionListResponse'
+      security:
+        - ApiKey: []
+        - OAuth2: [https://www.googleapis.com/auth/youtube.readonly]
+
+    post:
+      tags: [Channel Sections]
+      summary: Create channel section
+      description: Adds a channel section to the authenticated user's channel
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+        - name: onBehalfOfContentOwnerChannel
+          in: query
+          description: Content owner channel to act on behalf of
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelSection'
+      responses:
+        '200':
+          description: Channel section created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelSection'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+    put:
+      tags: [Channel Sections]
+      summary: Update channel section
+      description: Updates a channel section
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to update
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelSection'
+      responses:
+        '200':
+          description: Channel section updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelSection'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+    delete:
+      tags: [Channel Sections]
+      summary: Delete channel section
+      description: Deletes a channel section
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Section ID to delete
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Channel section deleted successfully
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+  # Videos
+  /videos:
+    get:
+      tags: [Videos]
+      summary: List videos
+      description: Returns a list of videos that match the API request parameters
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet,statistics,contentDetails"
+        - name: chart
+          in: query
+          description: Chart to retrieve (mostPopular)
+          schema:
+            type: string
+            enum: [mostPopular]
+        - name: id
+          in: query
+          description: Comma-separated list of video IDs
+          schema:
+            type: string
+        - name: myRating
+          in: query
+          description: Filter by user's rating
+          schema:
+            type: string
+            enum: [dislike, like]
+        - name: maxHeight
+          in: query
+          description: Maximum video height
+          schema:
+            type: integer
+        - name: maxResults
+          in: query
+          description: Maximum number of results (1-50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
+        - name: maxWidth
+          in: query
+          description: Maximum video width
+          schema:
+            type: integer
+        - name: pageToken
+          in: query
+          description: Page token for pagination
+          schema:
+            type: string
+        - name: regionCode
+          in: query
+          description: Geographic region code
+          schema:
+            type: string
+        - name: videoCategoryId
+          in: query
+          description: Video category ID
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoListResponse'
+      security:
+        - ApiKey: []
+        - OAuth2: [https://www.googleapis.com/auth/youtube.readonly]
+
+    post:
+      tags: [Videos]
+      summary: Upload video
+      description: Uploads a video to YouTube and optionally sets the video's metadata
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+        - name: autoLevels
+          in: query
+          description: Set to true to auto-enhance the video
+          schema:
+            type: boolean
+        - name: notifySubscribers
+          in: query
+          description: Set to false to not notify subscribers
+          schema:
+            type: boolean
+            default: true
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+        - name: onBehalfOfContentOwnerChannel
+          in: query
+          description: Content owner channel to act on behalf of
+          schema:
+            type: string
+        - name: stabilize
+          in: query
+          description: Set to true to stabilize the video
+          schema:
+            type: boolean
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                resource:
+                  $ref: '#/components/schemas/Video'
+                media:
+                  type: string
+                  format: binary
+                  description: Video file content
+      responses:
+        '200':
+          description: Video uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube.upload]
+
+    put:
+      tags: [Videos]
+      summary: Update video
+      description: Updates a video's metadata
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to update
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Video'
+      responses:
+        '200':
+          description: Video updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+    delete:
+      tags: [Videos]
+      summary: Delete video
+      description: Deletes a YouTube video
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Video ID to delete
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Video deleted successfully
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+  /videos/rate:
+    post:
+      tags: [Videos]
+      summary: Rate video
+      description: Add a like or dislike rating to a video or remove a rating
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Video ID to rate
+          schema:
+            type: string
+        - name: rating
+          in: query
+          required: true
+          description: Rating to apply
+          schema:
+            type: string
+            enum: [dislike, like, none]
+      responses:
+        '204':
+          description: Video rated successfully
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+  /videos/getRating:
+    get:
+      tags: [Videos]
+      summary: Get video ratings
+      description: Retrieves the ratings that the authorized user gave to specified videos
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Comma-separated list of video IDs
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoRatingListResponse'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+  /videos/reportAbuse:
+    post:
+      tags: [Videos]
+      summary: Report video abuse
+      description: Report a video for containing abusive content
+      parameters:
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VideoAbuseReport'
+      responses:
+        '204':
+          description: Video abuse reported successfully
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+  # Playlists
+  /playlists:
+    get:
+      tags: [Playlists]
+      summary: List playlists
+      description: Returns a collection of playlists that match the API request parameters
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet,status,contentDetails"
+        - name: channelId
+          in: query
+          description: Channel ID to retrieve playlists for
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: Comma-separated list of playlist IDs
+          schema:
+            type: string
+        - name: mine
+          in: query
+          description: Set to true to retrieve authenticated user's playlists
+          schema:
+            type: boolean
+        - name: maxResults
+          in: query
+          description: Maximum number of results (1-50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
+        - name: pageToken
+          in: query
+          description: Page token for pagination
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+        - name: onBehalfOfContentOwnerChannel
+          in: query
+          description: Content owner channel to act on behalf of
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistListResponse'
+      security:
+        - ApiKey: []
+        - OAuth2: [https://www.googleapis.com/auth/youtube.readonly]
+
+    post:
+      tags: [Playlists]
+      summary: Create playlist
+      description: Creates a playlist
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+        - name: onBehalfOfContentOwnerChannel
+          in: query
+          description: Content owner channel to act on behalf of
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Playlist'
+      responses:
+        '200':
+          description: Playlist created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playlist'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+    put:
+      tags: [Playlists]
+      summary: Update playlist
+      description: Modifies a playlist
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to update
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Playlist'
+      responses:
+        '200':
+          description: Playlist updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playlist'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+    delete:
+      tags: [Playlists]
+      summary: Delete playlist
+      description: Deletes a playlist
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Playlist ID to delete
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Playlist deleted successfully
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+  # Playlist Items
+  /playlistItems:
+    get:
+      tags: [Playlist Items]
+      summary: List playlist items
+      description: Returns a collection of playlist items that match the API request parameters
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet,contentDetails,status"
+        - name: id
+          in: query
+          description: Comma-separated list of playlist item IDs
+          schema:
+            type: string
+        - name: playlistId
+          in: query
+          description: Playlist ID to retrieve items for
+          schema:
+            type: string
+        - name: maxResults
+          in: query
+          description: Maximum number of results (1-50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
+        - name: pageToken
+          in: query
+          description: Page token for pagination
+          schema:
+            type: string
+        - name: videoId
+          in: query
+          description: Video ID to filter playlist items
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistItemListResponse'
+      security:
+        - ApiKey: []
+        - OAuth2: [https://www.googleapis.com/auth/youtube.readonly]
+
+    post:
+      tags: [Playlist Items]
+      summary: Add item to playlist
+      description: Adds a resource to a playlist
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaylistItem'
+      responses:
+        '200':
+          description: Playlist item added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistItem'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+    put:
+      tags: [Playlist Items]
+      summary: Update playlist item
+      description: Modifies a playlist item
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to update
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaylistItem'
+      responses:
+        '200':
+          description: Playlist item updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistItem'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+    delete:
+      tags: [Playlist Items]
+      summary: Remove item from playlist
+      description: Deletes a playlist item
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Playlist item ID to delete
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Playlist item deleted successfully
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+  # Search
+  /search:
+    get:
+      tags: [Search]
+      summary: Search for YouTube content
+      description: Returns a collection of search results that match the query parameters
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet"
+        - name: q
+          in: query
+          description: Search query term
+          schema:
+            type: string
+        - name: channelId
+          in: query
+          description: Channel ID to restrict search to
+          schema:
+            type: string
+        - name: channelType
+          in: query
+          description: Restrict search to specific channel type
+          schema:
+            type: string
+            enum: [any, show]
+        - name: eventType
+          in: query
+          description: Restrict search to specific event type
+          schema:
+            type: string
+            enum: [completed, live, upcoming]
+        - name: maxResults
+          in: query
+          description: Maximum number of results (1-50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
+        - name: order
+          in: query
+          description: Sort order for search results
+          schema:
+            type: string
+            enum: [date, rating, relevance, title, videoCount, viewCount]
+            default: relevance
+        - name: pageToken
+          in: query
+          description: Page token for pagination
+          schema:
+            type: string
+        - name: publishedAfter
+          in: query
+          description: Filter results published after this date
+          schema:
+            type: string
+            format: date-time
+        - name: publishedBefore
+          in: query
+          description: Filter results published before this date
+          schema:
+            type: string
+            format: date-time
+        - name: regionCode
+          in: query
+          description: Geographic region code
+          schema:
+            type: string
+        - name: relevanceLanguage
+          in: query
+          description: Language for search relevance
+          schema:
+            type: string
+        - name: safeSearch
+          in: query
+          description: Safe search setting
+          schema:
+            type: string
+            enum: [moderate, none, strict]
+            default: moderate
+        - name: topicId
+          in: query
+          description: Topic ID to filter results
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Restrict search to specific resource types
+          schema:
+            type: string
+            enum: [channel, playlist, video]
+            default: "video,channel,playlist"
+        - name: videoCategoryId
+          in: query
+          description: Video category ID
+          schema:
+            type: string
+        - name: videoDefinition
+          in: query
+          description: Filter by video definition
+          schema:
+            type: string
+            enum: [any, high, standard]
+        - name: videoDimension
+          in: query
+          description: Filter by video dimension
+          schema:
+            type: string
+            enum: [2d, 3d, any]
+        - name: videoDuration
+          in: query
+          description: Filter by video duration
+          schema:
+            type: string
+            enum: [any, long, medium, short]
+        - name: videoEmbeddable
+          in: query
+          description: Filter by embeddable videos
+          schema:
+            type: string
+            enum: [any, true]
+        - name: videoLicense
+          in: query
+          description: Filter by video license
+          schema:
+            type: string
+            enum: [any, creativeCommon, youtube]
+        - name: videoSyndicated
+          in: query
+          description: Filter by syndicated videos
+          schema:
+            type: string
+            enum: [any, true]
+        - name: videoType
+          in: query
+          description: Filter by video type
+          schema:
+            type: string
+            enum: [any, episode, movie]
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchListResponse'
+      security:
+        - ApiKey: []
+
+  # Subscriptions
+  /subscriptions:
+    get:
+      tags: [Subscriptions]
+      summary: List subscriptions
+      description: Returns subscription resources that match the API request criteria
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet,contentDetails,subscriberSnippet"
+        - name: channelId
+          in: query
+          description: Channel ID to get subscriptions for
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: Comma-separated list of subscription IDs
+          schema:
+            type: string
+        - name: mine
+          in: query
+          description: Set to true to retrieve authenticated user's subscriptions
+          schema:
+            type: boolean
+        - name: myRecentSubscribers
+          in: query
+          description: Set to true to retrieve recent subscribers
+          schema:
+            type: boolean
+        - name: mySubscribers
+          in: query
+          description: Set to true to retrieve all subscribers
+          schema:
+            type: boolean
+        - name: forChannelId
+          in: query
+          description: Channel ID to check subscription for
+          schema:
+            type: string
+        - name: maxResults
+          in: query
+          description: Maximum number of results (1-50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
+        - name: order
+          in: query
+          description: Sort order for subscriptions
+          schema:
+            type: string
+            enum: [alphabetical, relevance, unread]
+            default: relevance
+        - name: pageToken
+          in: query
+          description: Page token for pagination
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+        - name: onBehalfOfContentOwnerChannel
+          in: query
+          description: Content owner channel to act on behalf of
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionListResponse'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube.readonly]
+
+    post:
+      tags: [Subscriptions]
+      summary: Subscribe to channel
+      description: Adds a subscription for the authenticated user's channel
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Subscription'
+      responses:
+        '200':
+          description: Subscription created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+    delete:
+      tags: [Subscriptions]
+      summary: Unsubscribe from channel
+      description: Deletes a subscription
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Subscription ID to delete
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Subscription deleted successfully
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+  # Comments
+  /commentThreads:
+    get:
+      tags: [Comments]
+      summary: List comment threads
+      description: Returns a list of comment threads that match the API request parameters
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet,replies"
+        - name: allThreadsRelatedToChannelId
+          in: query
+          description: Channel ID to retrieve all comment threads for
+          schema:
+            type: string
+        - name: channelId
+          in: query
+          description: Channel ID to retrieve comment threads about
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: Comma-separated list of comment thread IDs
+          schema:
+            type: string
+        - name: videoId
+          in: query
+          description: Video ID to retrieve comment threads for
+          schema:
+            type: string
+        - name: maxResults
+          in: query
+          description: Maximum number of results (1-100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: moderationStatus
+          in: query
+          description: Filter by moderation status
+          schema:
+            type: string
+            enum: [heldForReview, likelySpam, published]
+        - name: order
+          in: query
+          description: Sort order for comments
+          schema:
+            type: string
+            enum: [relevance, time]
+            default: time
+        - name: pageToken
+          in: query
+          description: Page token for pagination
+          schema:
+            type: string
+        - name: searchTerms
+          in: query
+          description: Search terms to filter comments
+          schema:
+            type: string
+        - name: textFormat
+          in: query
+          description: Format for comment text
+          schema:
+            type: string
+            enum: [html, plainText]
+            default: html
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentThreadListResponse'
+      security:
+        - ApiKey: []
+        - OAuth2: [https://www.googleapis.com/auth/youtube.force-ssl]
+
+  /comments:
+    get:
+      tags: [Comments]
+      summary: List comments
+      description: Returns a list of comments that match the API request parameters
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet"
+        - name: id
+          in: query
+          description: Comma-separated list of comment IDs
+          schema:
+            type: string
+        - name: parentId
+          in: query
+          description: Parent comment ID to retrieve replies for
+          schema:
+            type: string
+        - name: maxResults
+          in: query
+          description: Maximum number of results (1-100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: pageToken
+          in: query
+          description: Page token for pagination
+          schema:
+            type: string
+        - name: textFormat
+          in: query
+          description: Format for comment text
+          schema:
+            type: string
+            enum: [html, plainText]
+            default: html
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentListResponse'
+      security:
+        - ApiKey: []
+        - OAuth2: [https://www.googleapis.com/auth/youtube.force-ssl]
+
+  # Thumbnails
+  /thumbnails/set:
+    post:
+      tags: [Thumbnails]
+      summary: Set video thumbnail
+      description: Uploads a custom video thumbnail to YouTube and sets it for a video
+      parameters:
+        - name: videoId
+          in: query
+          required: true
+          description: Video ID to set thumbnail for
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                media:
+                  type: string
+                  format: binary
+                  description: Thumbnail image file
+      responses:
+        '200':
+          description: Thumbnail uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThumbnailSetResponse'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube.upload]
+
+  # Video Categories
+  /videoCategories:
+    get:
+      tags: [Video Categories]
+      summary: List video categories
+      description: Returns a list of categories that can be associated with YouTube videos
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet"
+        - name: id
+          in: query
+          description: Comma-separated list of video category IDs
+          schema:
+            type: string
+        - name: regionCode
+          in: query
+          description: Geographic region code
+          schema:
+            type: string
+            default: US
+        - name: hl
+          in: query
+          description: Language for category names
+          schema:
+            type: string
+            default: en_US
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoCategoryListResponse'
+      security:
+        - ApiKey: []
+
+  # Video Abuse Report Reasons
+  /videoAbuseReportReasons:
+    get:
+      tags: [Video Abuse Report Reasons]
+      summary: List video abuse report reasons
+      description: Retrieve a list of reasons that can be used to report abusive videos
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet"
+        - name: hl
+          in: query
+          description: Language for reason text
+          schema:
+            type: string
+            default: en_US
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoAbuseReportReasonListResponse'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+  # I18n Languages
+  /i18nLanguages:
+    get:
+      tags: [I18n Languages]
+      summary: List supported languages
+      description: Returns a list of application languages that the YouTube website supports
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet"
+        - name: hl
+          in: query
+          description: Language for language names
+          schema:
+            type: string
+            default: en_US
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/I18nLanguageListResponse'
+      security:
+        - ApiKey: []
+
+  # I18n Regions
+  /i18nRegions:
+    get:
+      tags: [I18n Regions]
+      summary: List supported regions
+      description: Returns a list of content regions that the YouTube website supports
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet"
+        - name: hl
+          in: query
+          description: Language for region names
+          schema:
+            type: string
+            default: en_US
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/I18nRegionListResponse'
+      security:
+        - ApiKey: []
+
+  # Members
+  /members:
+    get:
+      tags: [Members]
+      summary: List channel members
+      description: Lists members for a channel
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet"
+        - name: maxResults
+          in: query
+          description: Maximum number of results (1-1000)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 5
+        - name: pageToken
+          in: query
+          description: Page token for pagination
+          schema:
+            type: string
+        - name: mode
+          in: query
+          description: Filtering mode
+          schema:
+            type: string
+            enum: [all_current, updates]
+            default: all_current
+        - name: hasAccessToLevel
+          in: query
+          description: Filter by membership level access
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberListResponse'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube.channel-memberships.creator]
+
+  # Membership Levels
+  /membershipsLevels:
+    get:
+      tags: [Membership Levels]
+      summary: List membership levels
+      description: Returns a collection of membership levels owned by the channel that authorized the API request
+      parameters:
+        - name: part
+          in: query
+          required: true
+          description: Comma-separated list of properties to include
+          schema:
+            type: string
+            example: "snippet"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipsLevelListResponse'
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube.channel-memberships.creator]
+
+  # Watermarks
+  /watermarks/set:
+    post:
+      tags: [Watermarks]
+      summary: Set channel watermark
+      description: Uploads a watermark image to YouTube and sets it for a channel
+      parameters:
+        - name: channelId
+          in: query
+          required: true
+          description: Channel ID to set watermark for
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                resource:
+                  $ref: '#/components/schemas/InvideoPromotion'
+                media:
+                  type: string
+                  format: binary
+                  description: Watermark image file
+      responses:
+        '204':
+          description: Watermark set successfully
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube.upload]
+
+  /watermarks/unset:
+    post:
+      tags: [Watermarks]
+      summary: Remove channel watermark
+      description: Deletes a channel's watermark image
+      parameters:
+        - name: channelId
+          in: query
+          required: true
+          description: Channel ID to remove watermark from
+          schema:
+            type: string
+        - name: onBehalfOfContentOwner
+          in: query
+          description: Content owner to act on behalf of
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Watermark removed successfully
+      security:
+        - OAuth2: [https://www.googleapis.com/auth/youtube]
+
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: query
+      name: key
+      description: API Key for accessing public data
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://accounts.google.com/o/oauth2/auth
+          tokenUrl: https://oauth2.googleapis.com/token
+          scopes:
+            https://www.googleapis.com/auth/youtube: Manage your YouTube account
+            https://www.googleapis.com/auth/youtube.readonly: View your YouTube account
+            https://www.googleapis.com/auth/youtube.upload: Upload YouTube videos
+            https://www.googleapis.com/auth/youtube.force-ssl: Manage your YouTube videos
+            https://www.googleapis.com/auth/youtube.channel-memberships.creator: View and manage your YouTube channel memberships
+
+  schemas:
+    # Activity schemas
+    ActivityListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#activityListResponse"
+        etag:
+          type: string
+        nextPageToken:
+          type: string
+        prevPageToken:
+          type: string
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity'
+
+    Activity:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#activity"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/ActivitySnippet'
+        contentDetails:
+          $ref: '#/components/schemas/ActivityContentDetails'
+
+    ActivitySnippet:
+      type: object
+      properties:
+        publishedAt:
+          type: string
+          format: date-time
+        channelId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        thumbnails:
+          $ref: '#/components/schemas/ThumbnailDetails'
+        channelTitle:
+          type: string
+        type:
+          type: string
+          enum: [upload, like, favorite, comment, subscription, playlistItem, recommendation, bulletin, social, channelItem, promotedItem]
+        groupId:
+          type: string
+
+    ActivityContentDetails:
+      type: object
+      properties:
+        upload:
+          type: object
+          properties:
+            videoId:
+              type: string
+        like:
+          type: object
+          properties:
+            resourceId:
+              $ref: '#/components/schemas/ResourceId'
+        favorite:
+          type: object
+          properties:
+            resourceId:
+              $ref: '#/components/schemas/ResourceId'
+        comment:
+          type: object
+          properties:
+            resourceId:
+              $ref: '#/components/schemas/ResourceId'
+        subscription:
+          type: object
+          properties:
+            resourceId:
+              $ref: '#/components/schemas/ResourceId'
+
+    # Caption schemas
+    CaptionListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#captionListResponse"
+        etag:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Caption'
+
+    Caption:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#caption"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/CaptionSnippet'
+
+    CaptionSnippet:
+      type: object
+      properties:
+        videoId:
+          type: string
+        lastUpdated:
+          type: string
+          format: date-time
+        trackKind:
+          type: string
+          enum: [asr, forced, standard]
+        language:
+          type: string
+        name:
+          type: string
+        audioTrackType:
+          type: string
+          enum: [commentary, descriptive, primary, unknown]
+        isCC:
+          type: boolean
+        isLarge:
+          type: boolean
+        isEasyReader:
+          type: boolean
+        isDraft:
+          type: boolean
+        isAutoSynced:
+          type: boolean
+        status:
+          type: string
+          enum: [failed, serving, syncing]
+
+    # Channel schemas
+    ChannelListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#channelListResponse"
+        etag:
+          type: string
+        nextPageToken:
+          type: string
+        prevPageToken:
+          type: string
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Channel'
+
+    Channel:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#channel"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/ChannelSnippet'
+        statistics:
+          $ref: '#/components/schemas/ChannelStatistics'
+        contentDetails:
+          $ref: '#/components/schemas/ChannelContentDetails'
+        status:
+          $ref: '#/components/schemas/ChannelStatus'
+        brandingSettings:
+          $ref: '#/components/schemas/ChannelBrandingSettings'
+        invideoPromotion:
+          $ref: '#/components/schemas/InvideoPromotion'
+        topicDetails:
+          $ref: '#/components/schemas/ChannelTopicDetails'
+        localizations:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ChannelLocalization'
+
+    ChannelSnippet:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        customUrl:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+        thumbnails:
+          $ref: '#/components/schemas/ThumbnailDetails'
+        defaultLanguage:
+          type: string
+        localized:
+          $ref: '#/components/schemas/ChannelLocalization'
+        country:
+          type: string
+
+    ChannelStatistics:
+      type: object
+      properties:
+        viewCount:
+          type: string
+        subscriberCount:
+          type: string
+        hiddenSubscriberCount:
+          type: boolean
+        videoCount:
+          type: string
+
+    ChannelContentDetails:
+      type: object
+      properties:
+        relatedPlaylists:
+          type: object
+          properties:
+            likes:
+              type: string
+            uploads:
+              type: string
+            watchHistory:
+              type: string
+            watchLater:
+              type: string
+
+    ChannelStatus:
+      type: object
+      properties:
+        privacyStatus:
+          type: string
+          enum: [private, public, unlisted]
+        isLinked:
+          type: boolean
+        longUploadsStatus:
+          type: string
+          enum: [allowed, disallowed, eligible, longUploadsUnspecified]
+        madeForKids:
+          type: boolean
+        selfDeclaredMadeForKids:
+          type: boolean
+
+    ChannelBrandingSettings:
+      type: object
+      properties:
+        channel:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            keywords:
+              type: string
+            trackingAnalyticsAccountId:
+              type: string
+            moderateComments:
+              type: boolean
+            showRelatedChannels:
+              type: boolean
+            showBrowseView:
+              type: boolean
+            featuredChannelsTitle:
+              type: string
+            featuredChannelsUrls:
+              type: array
+              items:
+                type: string
+            unsubscribedTrailer:
+              type: string
+            profileColor:
+              type: string
+        watch:
+          type: object
+          properties:
+            textColor:
+              type: string
+            backgroundColor:
+              type: string
+            featuredPlaylistId:
+              type: string
+        image:
+          type: object
+          properties:
+            bannerImageUrl:
+              type: string
+            bannerMobileImageUrl:
+              type: string
+            bannerTabletLowImageUrl:
+              type: string
+            bannerTabletImageUrl:
+              type: string
+            bannerTabletHdImageUrl:
+              type: string
+            bannerTabletExtraHdImageUrl:
+              type: string
+            bannerMobileLowImageUrl:
+              type: string
+            bannerMobileMediumHdImageUrl:
+              type: string
+            bannerMobileHdImageUrl:
+              type: string
+            bannerMobileExtraHdImageUrl:
+              type: string
+            bannerTvImageUrl:
+              type: string
+            bannerTvLowImageUrl:
+              type: string
+            bannerTvMediumImageUrl:
+              type: string
+            bannerTvHighImageUrl:
+              type: string
+
+    ChannelTopicDetails:
+      type: object
+      properties:
+        topicIds:
+          type: array
+          items:
+            type: string
+        topicCategories:
+          type: array
+          items:
+            type: string
+
+    ChannelLocalization:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+
+    # Channel Section schemas
+    ChannelSectionListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#channelSectionListResponse"
+        etag:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChannelSection'
+
+    ChannelSection:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#channelSection"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/ChannelSectionSnippet'
+        contentDetails:
+          $ref: '#/components/schemas/ChannelSectionContentDetails'
+        targeting:
+          $ref: '#/components/schemas/ChannelSectionTargeting'
+
+    ChannelSectionSnippet:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [allPlaylists, completedEvents, likedPlaylists, likes, liveEvents, multipleChannels, multiplePlaylists, popularUploads, postedPlaylists, postedVideos, recentActivity, recentPosts, recentUploads, singlePlaylist, subscriptions, upcomingEvents]
+        channelId:
+          type: string
+        title:
+          type: string
+        position:
+          type: integer
+
+    ChannelSectionContentDetails:
+      type: object
+      properties:
+        playlists:
+          type: array
+          items:
+            type: string
+        channels:
+          type: array
+          items:
+            type: string
+
+    ChannelSectionTargeting:
+      type: object
+      properties:
+        languages:
+          type: array
+          items:
+            type: string
+        regions:
+          type: array
+          items:
+            type: string
+        countries:
+          type: array
+          items:
+            type: string
+
+    # Video schemas
+    VideoListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#videoListResponse"
+        etag:
+          type: string
+        nextPageToken:
+          type: string
+        prevPageToken:
+          type: string
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Video'
+
+    Video:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#video"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/VideoSnippet'
+        status:
+          $ref: '#/components/schemas/VideoStatus'
+        statistics:
+          $ref: '#/components/schemas/VideoStatistics'
+        contentDetails:
+          $ref: '#/components/schemas/VideoContentDetails'
+        player:
+          $ref: '#/components/schemas/VideoPlayer'
+        topicDetails:
+          $ref: '#/components/schemas/VideoTopicDetails'
+        recordingDetails:
+          $ref: '#/components/schemas/VideoRecordingDetails'
+        fileDetails:
+          $ref: '#/components/schemas/VideoFileDetails'
+        processingDetails:
+          $ref: '#/components/schemas/VideoProcessingDetails'
+        suggestions:
+          $ref: '#/components/schemas/VideoSuggestions'
+        liveStreamingDetails:
+          $ref: '#/components/schemas/VideoLiveStreamingDetails'
+        localizations:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/VideoLocalization'
+
+    VideoSnippet:
+      type: object
+      properties:
+        publishedAt:
+          type: string
+          format: date-time
+        channelId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        thumbnails:
+          $ref: '#/components/schemas/ThumbnailDetails'
+        channelTitle:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        categoryId:
+          type: string
+        liveBroadcastContent:
+          type: string
+          enum: [live, none, upcoming]
+        defaultLanguage:
+          type: string
+        localized:
+          $ref: '#/components/schemas/VideoLocalization'
+        defaultAudioLanguage:
+          type: string
+
+    VideoStatus:
+      type: object
+      properties:
+        uploadStatus:
+          type: string
+          enum: [deleted, failed, processed, rejected, uploaded]
+        failureReason:
+          type: string
+          enum: [codec, conversion, emptyFile, invalidFile, tooSmall, uploadAborted]
+        rejectionReason:
+          type: string
+          enum: [claim, copyright, duplicate, inappropriate, legal, length, termsOfUse, trademark, uploaderAccountClosed, uploaderAccountSuspended]
+        privacyStatus:
+          type: string
+          enum: [private, public, unlisted]
+        publishAt:
+          type: string
+          format: date-time
+        license:
+          type: string
+          enum: [creativeCommon, youtube]
+        embeddable:
+          type: boolean
+        publicStatsViewable:
+          type: boolean
+        madeForKids:
+          type: boolean
+        selfDeclaredMadeForKids:
+          type: boolean
+
+    VideoStatistics:
+      type: object
+      properties:
+        viewCount:
+          type: string
+        likeCount:
+          type: string
+        dislikeCount:
+          type: string
+        favoriteCount:
+          type: string
+        commentCount:
+          type: string
+
+    VideoContentDetails:
+      type: object
+      properties:
+        duration:
+          type: string
+          description: ISO 8601 duration format
+        dimension:
+          type: string
+          enum: [2d, 3d]
+        definition:
+          type: string
+          enum: [hd, sd]
+        caption:
+          type: string
+          enum: ["false", "true"]
+        licensedContent:
+          type: boolean
+        regionRestriction:
+          type: object
+          properties:
+            allowed:
+              type: array
+              items:
+                type: string
+            blocked:
+              type: array
+              items:
+                type: string
+        contentRating:
+          type: object
+          properties:
+            mpaaRating:
+              type: string
+            tvpgRating:
+              type: string
+            bbfcRating:
+              type: string
+            chvrsRating:
+              type: string
+            eirinRating:
+              type: string
+            cbfcRating:
+              type: string
+            fmocRating:
+              type: string
+            icaaRating:
+              type: string
+            acbRating:
+              type: string
+            oflcRating:
+              type: string
+            fskRating:
+              type: string
+            kmrbRating:
+              type: string
+            djctqRating:
+              type: string
+            russiaRating:
+              type: string
+            rtcRating:
+              type: string
+            ytRating:
+              type: string
+        projection:
+          type: string
+          enum: [360, rectangular]
+        hasCustomThumbnail:
+          type: boolean
+
+    VideoPlayer:
+      type: object
+      properties:
+        embedHtml:
+          type: string
+        embedHeight:
+          type: string
+        embedWidth:
+          type: string
+
+    VideoTopicDetails:
+      type: object
+      properties:
+        topicIds:
+          type: array
+          items:
+            type: string
+        relevantTopicIds:
+          type: array
+          items:
+            type: string
+        topicCategories:
+          type: array
+          items:
+            type: string
+
+    VideoRecordingDetails:
+      type: object
+      properties:
+        recordingDate:
+          type: string
+          format: date-time
+
+    VideoFileDetails:
+      type: object
+      properties:
+        fileName:
+          type: string
+        fileSize:
+          type: string
+        fileType:
+          type: string
+          enum: [archive, audio, document, image, other, project, video]
+        container:
+          type: string
+        videoStreams:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoFileDetailsVideoStream'
+        audioStreams:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoFileDetailsAudioStream'
+        durationMs:
+          type: string
+        bitrateBps:
+          type: string
+        creationTime:
+          type: string
+
+    VideoFileDetailsVideoStream:
+      type: object
+      properties:
+        widthPixels:
+          type: integer
+        heightPixels:
+          type: integer
+        frameRateFps:
+          type: number
+        aspectRatio:
+          type: number
+        codec:
+          type: string
+        bitrateBps:
+          type: string
+        rotation:
+          type: string
+          enum: [clockwise, counterClockwise, none, other, upsideDown]
+        vendor:
+          type: string
+
+    VideoFileDetailsAudioStream:
+      type: object
+      properties:
+        channelCount:
+          type: integer
+        codec:
+          type: string
+        bitrateBps:
+          type: string
+        vendor:
+          type: string
+
+    VideoProcessingDetails:
+      type: object
+      properties:
+        processingStatus:
+          type: string
+          enum: [failed, processing, succeeded, terminated]
+        processingProgress:
+          type: object
+          properties:
+            partsTotal:
+              type: string
+            partsProcessed:
+              type: string
+            timeLeftMs:
+              type: string
+        processingFailureReason:
+          type: string
+          enum: [other, streamingFailed, transcodeFailed, uploadFailed]
+        fileDetailsAvailability:
+          type: string
+        processingIssuesAvailability:
+          type: string
+        tagSuggestionsAvailability:
+          type: string
+        editorSuggestionsAvailability:
+          type: string
+        thumbnailsAvailability:
+          type: string
+
+    VideoSuggestions:
+      type: object
+      properties:
+        processingErrors:
+          type: array
+          items:
+            type: string
+        processingWarnings:
+          type: array
+          items:
+            type: string
+        processingHints:
+          type: array
+          items:
+            type: string
+        tagSuggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoSuggestionsTagSuggestion'
+        editorSuggestions:
+          type: array
+          items:
+            type: string
+
+    VideoSuggestionsTagSuggestion:
+      type: object
+      properties:
+        tag:
+          type: string
+        categoryRestricts:
+          type: array
+          items:
+            type: string
+
+    VideoLiveStreamingDetails:
+      type: object
+      properties:
+        actualStartTime:
+          type: string
+          format: date-time
+        actualEndTime:
+          type: string
+          format: date-time
+        scheduledStartTime:
+          type: string
+          format: date-time
+        scheduledEndTime:
+          type: string
+          format: date-time
+        concurrentViewers:
+          type: string
+        activeLiveChatId:
+          type: string
+
+    VideoLocalization:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+
+    # Playlist schemas
+    PlaylistListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#playlistListResponse"
+        etag:
+          type: string
+        nextPageToken:
+          type: string
+        prevPageToken:
+          type: string
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Playlist'
+
+    Playlist:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#playlist"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/PlaylistSnippet'
+        status:
+          $ref: '#/components/schemas/PlaylistStatus'
+        contentDetails:
+          $ref: '#/components/schemas/PlaylistContentDetails'
+        player:
+          $ref: '#/components/schemas/PlaylistPlayer'
+        localizations:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/PlaylistLocalization'
+
+    PlaylistSnippet:
+      type: object
+      properties:
+        publishedAt:
+          type: string
+          format: date-time
+        channelId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        thumbnails:
+          $ref: '#/components/schemas/ThumbnailDetails'
+        channelTitle:
+          type: string
+        defaultLanguage:
+          type: string
+        localized:
+          $ref: '#/components/schemas/PlaylistLocalization'
+        tags:
+          type: array
+          items:
+            type: string
+
+    PlaylistStatus:
+      type: object
+      properties:
+        privacyStatus:
+          type: string
+          enum: [private, public, unlisted]
+
+    PlaylistContentDetails:
+      type: object
+      properties:
+        itemCount:
+          type: integer
+
+    PlaylistPlayer:
+      type: object
+      properties:
+        embedHtml:
+          type: string
+
+    PlaylistLocalization:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+
+    # Playlist Item schemas
+    PlaylistItemListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#playlistItemListResponse"
+        etag:
+          type: string
+        nextPageToken:
+          type: string
+        prevPageToken:
+          type: string
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlaylistItem'
+
+    PlaylistItem:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#playlistItem"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/PlaylistItemSnippet'
+        contentDetails:
+          $ref: '#/components/schemas/PlaylistItemContentDetails'
+        status:
+          $ref: '#/components/schemas/PlaylistItemStatus'
+
+    PlaylistItemSnippet:
+      type: object
+      properties:
+        publishedAt:
+          type: string
+          format: date-time
+        channelId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        thumbnails:
+          $ref: '#/components/schemas/ThumbnailDetails'
+        channelTitle:
+          type: string
+        playlistId:
+          type: string
+        position:
+          type: integer
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        videoOwnerChannelTitle:
+          type: string
+        videoOwnerChannelId:
+          type: string
+
+    PlaylistItemContentDetails:
+      type: object
+      properties:
+        videoId:
+          type: string
+        startAt:
+          type: string
+        endAt:
+          type: string
+        note:
+          type: string
+        videoPublishedAt:
+          type: string
+          format: date-time
+
+    PlaylistItemStatus:
+      type: object
+      properties:
+        privacyStatus:
+          type: string
+          enum: [private, public, unlisted]
+
+    # Search schemas
+    SearchListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#searchListResponse"
+        etag:
+          type: string
+        nextPageToken:
+          type: string
+        prevPageToken:
+          type: string
+        regionCode:
+          type: string
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+
+    SearchResult:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#searchResult"
+        etag:
+          type: string
+        id:
+          $ref: '#/components/schemas/ResourceId'
+        snippet:
+          $ref: '#/components/schemas/SearchResultSnippet'
+
+    SearchResultSnippet:
+      type: object
+      properties:
+        publishedAt:
+          type: string
+          format: date-time
+        channelId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        thumbnails:
+          $ref: '#/components/schemas/ThumbnailDetails'
+        channelTitle:
+          type: string
+        liveBroadcastContent:
+          type: string
+          enum: [live, none, upcoming]
+
+    # Subscription schemas
+    SubscriptionListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#subscriptionListResponse"
+        etag:
+          type: string
+        nextPageToken:
+          type: string
+        prevPageToken:
+          type: string
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subscription'
+
+    Subscription:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#subscription"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/SubscriptionSnippet'
+        contentDetails:
+          $ref: '#/components/schemas/SubscriptionContentDetails'
+        subscriberSnippet:
+          $ref: '#/components/schemas/SubscriptionSubscriberSnippet'
+
+    SubscriptionSnippet:
+      type: object
+      properties:
+        publishedAt:
+          type: string
+          format: date-time
+        channelTitle:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        channelId:
+          type: string
+        thumbnails:
+          $ref: '#/components/schemas/ThumbnailDetails'
+
+    SubscriptionContentDetails:
+      type: object
+      properties:
+        totalItemCount:
+          type: integer
+        newItemCount:
+          type: integer
+        activityType:
+          type: string
+          enum: [all, uploads]
+
+    SubscriptionSubscriberSnippet:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        channelId:
+          type: string
+        thumbnails:
+          $ref: '#/components/schemas/ThumbnailDetails'
+
+    # Comment schemas
+    CommentThreadListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#commentThreadListResponse"
+        etag:
+          type: string
+        nextPageToken:
+          type: string
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentThread'
+
+    CommentThread:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#commentThread"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/CommentThreadSnippet'
+        replies:
+          $ref: '#/components/schemas/CommentThreadReplies'
+
+    CommentThreadSnippet:
+      type: object
+      properties:
+        channelId:
+          type: string
+        videoId:
+          type: string
+        topLevelComment:
+          $ref: '#/components/schemas/Comment'
+        canReply:
+          type: boolean
+        totalReplyCount:
+          type: integer
+        isPublic:
+          type: boolean
+
+    CommentThreadReplies:
+      type: object
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+
+    CommentListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#commentListResponse"
+        etag:
+          type: string
+        nextPageToken:
+          type: string
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+
+    Comment:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#comment"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/CommentSnippet'
+
+    CommentSnippet:
+      type: object
+      properties:
+        authorDisplayName:
+          type: string
+        authorProfileImageUrl:
+          type: string
+        authorChannelUrl:
+          type: string
+        authorChannelId:
+          $ref: '#/components/schemas/CommentSnippetAuthorChannelId'
+        videoId:
+          type: string
+        textDisplay:
+          type: string
+        textOriginal:
+          type: string
+        parentId:
+          type: string
+        canRate:
+          type: boolean
+        viewerRating:
+          type: string
+          enum: [dislike, like, none, unspecified]
+        likeCount:
+          type: integer
+        moderationStatus:
+          type: string
+          enum: [heldForReview, likelySpam, published, rejected]
+        publishedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CommentSnippetAuthorChannelId:
+      type: object
+      properties:
+        value:
+          type: string
+
+    # Other schemas
+    ResourceId:
+      type: object
+      properties:
+        kind:
+          type: string
+        videoId:
+          type: string
+        channelId:
+          type: string
+        playlistId:
+          type: string
+
+    ThumbnailDetails:
+      type: object
+      properties:
+        default:
+          $ref: '#/components/schemas/Thumbnail'
+        medium:
+          $ref: '#/components/schemas/Thumbnail'
+        high:
+          $ref: '#/components/schemas/Thumbnail'
+        standard:
+          $ref: '#/components/schemas/Thumbnail'
+        maxres:
+          $ref: '#/components/schemas/Thumbnail'
+
+    Thumbnail:
+      type: object
+      properties:
+        url:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+
+    PageInfo:
+      type: object
+      properties:
+        totalResults:
+          type: integer
+        resultsPerPage:
+          type: integer
+
+    InvideoPromotion:
+      type: object
+      properties:
+        defaultTiming:
+          $ref: '#/components/schemas/InvideoTiming'
+        position:
+          $ref: '#/components/schemas/InvideoPosition'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromotedItem'
+        useSmartTiming:
+          type: boolean
+
+    InvideoTiming:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [offsetFromEnd, offsetFromStart]
+        offsetMs:
+          type: string
+        durationMs:
+          type: string
+
+    InvideoPosition:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [corner, topLeft, topRight, bottomLeft, bottomRight]
+        cornerPosition:
+          type: string
+          enum: [topLeft, topRight, bottomLeft, bottomRight]
+
+    PromotedItem:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/PromotedItemId'
+        promotedByContentOwner:
+          type: boolean
+        timing:
+          $ref: '#/components/schemas/InvideoTiming'
+        customMessage:
+          type: string
+
+    PromotedItemId:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [recentUpload, video, website]
+        videoId:
+          type: string
+        websiteUrl:
+          type: string
+
+    ThumbnailSetResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#thumbnailSetResponse"
+        etag:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThumbnailDetails'
+
+    VideoRatingListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#videoRatingListResponse"
+        etag:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoRating'
+
+    VideoRating:
+      type: object
+      properties:
+        videoId:
+          type: string
+        rating:
+          type: string
+          enum: [dislike, like, none, unspecified]
+
+    VideoAbuseReport:
+      type: object
+      properties:
+        videoId:
+          type: string
+        reasonId:
+          type: string
+        secondaryReasonId:
+          type: string
+        comments:
+          type: string
+        language:
+          type: string
+
+    VideoCategoryListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#videoCategoryListResponse"
+        etag:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoCategory'
+
+    VideoCategory:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#videoCategory"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/VideoCategorySnippet'
+
+    VideoCategorySnippet:
+      type: object
+      properties:
+        channelId:
+          type: string
+        title:
+          type: string
+        assignable:
+          type: boolean
+
+    VideoAbuseReportReasonListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#videoAbuseReportReasonListResponse"
+        etag:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoAbuseReportReason'
+
+    VideoAbuseReportReason:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#videoAbuseReportReason"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/VideoAbuseReportReasonSnippet'
+
+    VideoAbuseReportReasonSnippet:
+      type: object
+      properties:
+        label:
+          type: string
+        secondaryReasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoAbuseReportSecondaryReason'
+
+    VideoAbuseReportSecondaryReason:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+
+    I18nLanguageListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#i18nLanguageListResponse"
+        etag:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/I18nLanguage'
+
+    I18nLanguage:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#i18nLanguage"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/I18nLanguageSnippet'
+
+    I18nLanguageSnippet:
+      type: object
+      properties:
+        hl:
+          type: string
+        name:
+          type: string
+
+    I18nRegionListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#i18nRegionListResponse"
+        etag:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/I18nRegion'
+
+    I18nRegion:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#i18nRegion"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/I18nRegionSnippet'
+
+    I18nRegionSnippet:
+      type: object
+      properties:
+        gl:
+          type: string
+        name:
+          type: string
+
+    MemberListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#memberListResponse"
+        etag:
+          type: string
+        nextPageToken:
+          type: string
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Member'
+
+    Member:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#member"
+        etag:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/MemberSnippet'
+
+    MemberSnippet:
+      type: object
+      properties:
+        creatorChannelId:
+          type: string
+        memberDetails:
+          $ref: '#/components/schemas/ChannelProfileDetails'
+        membershipsDetails:
+          $ref: '#/components/schemas/MembershipsDetails'
+
+    ChannelProfileDetails:
+      type: object
+      properties:
+        channelId:
+          type: string
+        channelUrl:
+          type: string
+        displayName:
+          type: string
+        profileImageUrl:
+          type: string
+
+    MembershipsDetails:
+      type: object
+      properties:
+        accessibleLevels:
+          type: array
+          items:
+            type: string
+        highestAccessibleLevel:
+          type: string
+        highestAccessibleLevelDisplayName:
+          type: string
+        membershipsDuration:
+          $ref: '#/components/schemas/MembershipsDuration'
+        membershipsDurationAtLevel:
+          $ref: '#/components/schemas/MembershipsDurationAtLevel'
+
+    MembershipsDuration:
+      type: object
+      properties:
+        memberSince:
+          type: string
+        memberTotalDurationMonths:
+          type: integer
+
+    MembershipsDurationAtLevel:
+      type: object
+      properties:
+        level:
+          type: string
+        memberSince:
+          type: string
+        memberTotalDurationMonths:
+          type: integer
+
+    MembershipsLevelListResponse:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#membershipsLevelListResponse"
+        etag:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MembershipsLevel'
+
+    MembershipsLevel:
+      type: object
+      properties:
+        kind:
+          type: string
+          default: "youtube#membershipsLevel"
+        etag:
+          type: string
+        id:
+          type: string
+        snippet:
+          $ref: '#/components/schemas/MembershipsLevelSnippet'
+
+    MembershipsLevelSnippet:
+      type: object
+      properties:
+        creatorChannelId:
+          type: string
+        levelDetails:
+          $ref: '#/components/schemas/LevelDetails'
+
+    LevelDetails:
+      type: object
+      properties:
+        displayName:
+          type: string
+
+security:
+  - ApiKey: []
+
+tags:
+  - name: Activities
+    description: Channel activity events and user actions
+  - name: Captions
+    description: Video caption tracks management
+  - name: Channels
+    description: Channel information and management
+  - name: Channel Sections
+    description: Channel content sections and shelves
+  - name: Videos
+    description: Video upload, management, and metadata
+  - name: Playlists
+    description: Playlist creation and management
+  - name: Playlist Items
+    description: Playlist item management
+  - name: Search
+    description: Search for YouTube content
+  - name: Subscriptions
+    description: Channel subscription management
+  - name: Comments
+    description: Comment and comment thread management
+  - name: Thumbnails
+    description: Custom thumbnail management
+  - name: Video Categories
+    description: Video category information
+  - name: Video Abuse Report Reasons
+    description: Video abuse reporting functionality
+  - name: I18n Languages
+    description: Supported application languages
+  - name: I18n Regions
+    description: Supported content regions
+  - name: Members
+    description: Channel membership management
+  - name: Membership Levels
+    description: Channel membership level management
+  - name: Watermarks
+    description: Channel watermark management
