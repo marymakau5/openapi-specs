@@ -1,31 +1,56 @@
-# OpenAPI Specs
+# 🌐 Social Media OpenAPI Specs
 
 OpenAPI 3.0 specifications for all 13 social media platforms supported by [Late](https://getlate.dev).
 
-## Platforms
+Use these specs to explore, test, and build integrations with the APIs behind the most popular social media platforms.
 
-| Platform | Endpoints | Source |
-|----------|-----------|--------|
-| Pinterest | 236 | Official spec |
-| Twitter/X | 147 | Official spec |
-| Reddit | 50 | From docs |
-| YouTube | 42 | From docs |
-| Instagram | 36 | From docs |
-| Telegram | 34 | Official spec |
-| Bluesky | 34 | From docs |
-| Threads | 29 | From docs |
-| Google Business | 29 | From docs |
-| Facebook | 28 | From docs |
-| Snapchat | 27 | From docs |
-| LinkedIn | 27 | From docs |
-| TikTok | 22 | From docs |
-| **Total** | **741** | **13 platforms** |
+## 📋 Platforms
 
-## Sources
+| Platform | File | Endpoints | Source |
+|----------|------|-----------|--------|
+| Pinterest | `pinterest.yaml` | 236 | Official spec |
+| Twitter/X | `twitter.yaml` | 147 | Official spec |
+| Reddit | `reddit.yaml` | 50 | Official docs |
+| YouTube | `youtube.yaml` | 42 | Official docs |
+| Instagram | `instagram.yaml` | 36 | Official docs |
+| Telegram | `telegram.yaml` | 34 | Official spec |
+| Bluesky | `bluesky.yaml` | 34 | Official docs |
+| Threads | `threads.yaml` | 29 | Official docs |
+| Google Business | `googlebusiness.yaml` | 29 | Official docs |
+| Facebook | `facebook.yaml` | 28 | Official docs |
+| Snapchat | `snapchat.yaml` | 27 | Official docs |
+| LinkedIn | `linkedin.yaml` | 27 | Official docs |
+| TikTok | `tiktok.yaml` | 22 | Official docs |
+| **Total** | | **741** | **13 platforms** |
 
-- **Official specs**: Downloaded directly from platform-maintained repositories
-- **From docs**: Hand-crafted from official API documentation, covering all available endpoints
+## 🔍 Sources
 
-## License
+- **Official specs** — Downloaded directly from platform-maintained repositories (Pinterest, Twitter/X, Telegram)
+- **Official docs** — Hand-crafted from official API documentation, covering all available endpoints
+
+## 🚀 Usage
+
+These specs work with any OpenAPI-compatible tool:
+
+- **[Swagger Editor](https://editor.swagger.io/)** — Visualize and explore endpoints
+- **[Postman](https://www.postman.com/)** — Import and test API calls
+- **[Insomnia](https://insomnia.rest/)** — API client with OpenAPI support
+- **Code generation** — Use [OpenAPI Generator](https://openapi-generator.tech/) to generate client SDKs
+
+## 💜 About Late
+
+**[Late](https://getlate.dev)** is the all-in-one social media scheduling tool that supports all 13 platforms listed above. Schedule posts, manage multiple accounts, and grow your audience from a single dashboard.
+
+👉 **[Try Late for free](https://getlate.dev)** — No credit card required.
+
+📺 **[Watch the demo](https://www.youtube.com/watch?v=2TzRQn-Ib_s)**
+
+💡 **[Request a feature](https://late.featurebase.app/)**
+
+## 🤝 Contributing
+
+Found a missing endpoint or an error? PRs are welcome! Please make sure your changes follow the OpenAPI 3.0.3 specification.
+
+## 📄 License
 
 MIT
