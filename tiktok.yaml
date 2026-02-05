@@ -389,10 +389,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  # User Information
-  /user/info/:
-    post:
+  # User Information (v2 API - Current)
+  /v2/user/info/:
+    get:
       summary: Get user profile information
+      description: |
+        Returns basic information for a given TikTok user. This is the v2 API endpoint (current).
+        Requires relevant scopes to be authorized by the TikTok user.
       security:
         - AccessToken: []
       parameters:
@@ -402,7 +405,57 @@ paths:
           schema:
             type: string
             example: "open_id,union_id,avatar_url,display_name,follower_count"
-          description: Comma-separated list of user fields
+          description: |
+            Comma-separated list of user fields to request. Available fields:
+            - open_id, union_id, avatar_url, avatar_url_100, avatar_large_url (user.info.basic)
+            - display_name, bio_description, profile_deep_link, is_verified, username (user.info.profile)
+            - follower_count, following_count, likes_count, video_count (user.info.stats)
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/UserInfo'
+                  error:
+                    $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid request or missing scopes
+
+  # User Information (v1 API - Deprecated)
+  /user/info/:
+    post:
+      summary: Get user profile information (v1 - Deprecated)
+      description: |
+        **DEPRECATED**: Use GET /v2/user/info/ instead.
+        This is the legacy v1 API endpoint. TikTok recommends migrating to v2.
+      deprecated: true
+      security:
+        - AccessToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                access_token:
+                  type: string
+                  description: The access token
+                open_id:
+                  type: string
+                  description: The user's open_id
+                fields:
+                  type: array
+                  items:
+                    type: string
+                  description: List of fields to return
       responses:
         '200':
           description: User information
