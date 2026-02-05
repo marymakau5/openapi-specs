@@ -16,12 +16,12 @@ Use these specs to explore, test, and build integrations with the APIs behind th
 | Telegram | `telegram.yaml` | 34 | Official spec |
 | Bluesky | `bluesky.yaml` | 34 | Official docs |
 | Threads | `threads.yaml` | 29 | Official docs |
-| Google Business | `googlebusiness.yaml` | 29 | Official docs |
+| Google Business | `googlebusiness.yaml` | 48 | Official docs |
 | Facebook | `facebook.yaml` | 28 | Official docs |
 | Snapchat | `snapchat.yaml` | 27 | Official docs |
 | LinkedIn | `linkedin.yaml` | 27 | Official docs |
 | TikTok | `tiktok.yaml` | 22 | Official docs |
-| **Total** | | **741** | **13 platforms** |
+| **Total** | | **760** | **13 platforms** |
 
 ## 🔍 Sources
 
