@@ -549,6 +549,54 @@ paths:
                     type: string
                     description: Reply ID
 
+  # Private Reply (Messaging) endpoints
+  /{comment-id}/private_replies:
+    post:
+      summary: Send private reply to comment author
+      description: |
+        Send a private Messenger message to the author of a comment on a Page post.
+        Opens a Messenger conversation between the Page and the commenter, with a
+        reference link to the original comment.
+
+        **Limitations:**
+        - Only ONE private reply per comment
+        - Must be sent within 7 days of the comment being posted
+        - Only works for comments on posts owned by the Page
+        - Text only (no media attachments)
+        - Requires `pages_messaging` permission
+      tags: [Comments, Messaging]
+      parameters:
+        - $ref: '#/components/parameters/comment_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  description: The message text to send as a private DM
+            example:
+              message: "Hi! Thanks for your comment. I wanted to reach out privately."
+      responses:
+        '200':
+          description: Private reply sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message_id:
+                    type: string
+                    description: The ID of the sent message
+        '400':
+          description: Bad request (invalid comment ID, comment deleted, or comment too old)
+        '403':
+          description: Missing pages_messaging permission or private reply already sent
+
   # Insights endpoints
   /{page-id}/insights:
     get:
@@ -708,6 +756,8 @@ components:
             pages_manage_metadata: Manage page metadata
             pages_read_user_content: Read user-generated content on pages
             publish_to_groups: Publish to groups
+            pages_messaging: Send and receive messages as a Page
+            pages_manage_engagement: Manage page engagement (comments, likes)
 
   parameters:
     page_id:
@@ -1392,5 +1442,7 @@ tags:
     description: Comment operations
   - name: Likes
     description: Like operations
+  - name: Messaging
+    description: Private messaging operations
   - name: Insights
     description: Analytics and insights
